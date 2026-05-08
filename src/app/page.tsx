@@ -1,43 +1,99 @@
-export default function Home() {
+import { promises as fs } from "node:fs";
+import { resolve } from "node:path";
+import DashboardRoot from "@/components/DashboardRoot";
+
+async function loadJson<T>(rel: string): Promise<T> {
+  const text = await fs.readFile(resolve(process.cwd(), rel), "utf8");
+  return JSON.parse(text) as T;
+}
+
+const dedupeKey = (h: { cusip: string; putCall?: string }) =>
+  `${h.cusip}|${h.putCall ?? ""}`;
+
+/** For each holding in the latest quarter, count consecutive newest-first quarters
+ *  in which the same (cusip, putCall) appears. */
+function computeQtrsHeld(
+  quartersNewestFirst: Array<{ holdings: Array<{ cusip: string; putCall?: string }> }>,
+): Record<string, number> {
+  if (quartersNewestFirst.length === 0) return {};
+  const out: Record<string, number> = {};
+  const latest = quartersNewestFirst[0];
+  for (const h of latest.holdings) {
+    const key = dedupeKey(h);
+    let count = 0;
+    for (const q of quartersNewestFirst) {
+      const present = q.holdings.some((x) => dedupeKey(x) === key);
+      if (!present) break;
+      count++;
+    }
+    out[key] = count;
+  }
+  return out;
+}
+
+/** Load every statements file referenced in _index.json into a ticker→file map.
+ *  Missing files are skipped (logged) rather than failing the whole page. */
+async function loadAllStatements(): Promise<Record<string, any>> {
+  const idx = await loadJson<{ tickers: Record<string, string> }>(
+    "data/statements/_index.json",
+  );
+  const entries = await Promise.all(
+    Object.entries(idx.tickers).map(async ([ticker, file]) => {
+      try {
+        const data = await loadJson<any>(`data/statements/${file}`);
+        return [ticker, data] as const;
+      } catch (e) {
+        console.warn(`statements: skipping ${ticker} (${file}):`, e);
+        return null;
+      }
+    }),
+  );
+  return Object.fromEntries(entries.filter((x): x is readonly [string, any] => x != null));
+}
+
+export default async function Home() {
+  const [
+    q4_2025,
+    q3_2025,
+    q2_2025,
+    q1_2025,
+    q4_2024,
+    delta,
+    hk,
+    cn,
+    statements,
+    peerOverlap,
+    fundamentals,
+  ] = await Promise.all([
+    loadJson<any>("data/13f-history/2025Q4.json"),
+    loadJson<any>("data/13f-history/2025Q3.json"),
+    loadJson<any>("data/13f-history/2025Q2.json"),
+    loadJson<any>("data/13f-history/2025Q1.json"),
+    loadJson<any>("data/13f-history/2024Q4.json"),
+    loadJson<any>("data/13f-deltas/2025Q4-vs-2025Q3.json"),
+    loadJson<any>("data/manual/hk-holdings.json"),
+    loadJson<any>("data/manual/cn-holdings.json"),
+    loadAllStatements(),
+    loadJson<any>("data/peers/overlap.json").catch(() => null),
+    loadJson<any>("data/fundamentals/snapshot.json").catch(() => null),
+  ]);
+
+  const qtrsHeld = computeQtrsHeld([q4_2025, q3_2025, q2_2025, q1_2025, q4_2024]);
+  const closedRecords = (delta.records as any[]).filter(
+    (r) => r.action.kind === "CLOSED",
+  );
+
   return (
-    <main className="min-h-screen flex items-center justify-center px-10 py-20">
-      <div className="text-center max-w-xl">
-        <div
-          className="inline-flex items-center justify-center font-serifCn font-bold text-[60px] text-gold-light"
-          style={{
-            width: "92px",
-            height: "92px",
-            border: "2px solid #c9a961",
-            transform: "rotate(-2deg)",
-            background:
-              "repeating-linear-gradient(45deg, rgba(228,204,146,0.05) 0 2px, transparent 2px 4px), rgba(192,57,43,0.06)",
-            boxShadow:
-              "0 0 0 1px rgba(192,57,43,0.10), 0 0 28px -6px rgba(192,57,43,0.20)",
-          }}
-        >
-          段
-        </div>
-
-        <h1 className="font-display text-5xl mt-8 leading-tight">
-          段永平
-          <span className="text-gold-deep px-2">·</span>
-          H&amp;H
-        </h1>
-        <p className="font-display italic text-gold text-3xl mt-2">
-          Real-Time Holdings Atlas
-        </p>
-
-        <p className="font-mono text-xs mt-8 text-bone-300" style={{ letterSpacing: "0.20em" }}>
-          PHASE 0 SCAFFOLD · NEXT.JS 14 · TAILWIND · TSX
-        </p>
-
-        <div className="mt-10 pt-8 border-t border-bone-500/20 text-bone-200 text-sm space-y-2 leading-relaxed">
-          <p>项目骨架就绪。设计稿位于 <code className="font-mono text-gold-light">/design/index.html</code></p>
-          <p className="text-bone-300 text-xs">
-            Phase 1 — EDGAR 13F 拉取脚本 已就位,运行 <code className="font-mono text-gold-light">npm run fetch:13f</code> 同步真实持仓
-          </p>
-        </div>
-      </div>
-    </main>
+    <DashboardRoot
+      latest={q4_2025}
+      delta={delta}
+      hk={hk}
+      cn={cn}
+      qtrsHeld={qtrsHeld}
+      closedRecords={closedRecords}
+      statements={statements}
+      peerOverlap={peerOverlap}
+      fundamentals={fundamentals}
+    />
   );
 }

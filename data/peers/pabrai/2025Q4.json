@@ -1,0 +1,67 @@
+{
+  "filerCik": "0001549575",
+  "filerName": "Dalal Street, LLC",
+  "reportDate": "2025-12-31",
+  "filingDate": "2026-02-13",
+  "accessionNumber": "0001549575-26-000002",
+  "form": "13F-HR",
+  "totalValue": 402040227,
+  "totalPositions": 4,
+  "putCallPositions": 0,
+  "unresolvedCount": 4,
+  "generatedAt": "2026-05-07T13:49:42.278Z",
+  "holdings": [
+    {
+      "cusip": "93627C101",
+      "ticker": "93627C101",
+      "exchange": "OTHER",
+      "nameOfIssuer": "WARRIOR MET COAL INC",
+      "nameEn": "WARRIOR MET COAL INC",
+      "titleOfClass": "COM",
+      "value": 158691099,
+      "shares": 1799831,
+      "shareType": "SH",
+      "weight": 39.4714479653301,
+      "unresolvedCusip": true
+    },
+    {
+      "cusip": "H8817H100",
+      "ticker": "H8817H100",
+      "exchange": "OTHER",
+      "nameOfIssuer": "TRANSOCEAN LTD",
+      "nameEn": "TRANSOCEAN LTD",
+      "titleOfClass": "REGISTERED SHS",
+      "value": 111675749,
+      "shares": 27040133,
+      "shareType": "SH",
+      "weight": 27.777257473292593,
+      "unresolvedCusip": true
+    },
+    {
+      "cusip": "020764106",
+      "ticker": "020764106",
+      "exchange": "OTHER",
+      "nameOfIssuer": "ALPHA METALLURGICAL RESOUR I",
+      "nameEn": "ALPHA METALLURGICAL RESOUR I",
+      "titleOfClass": "COM",
+      "value": 108534840,
+      "shares": 543000,
+      "shareType": "SH",
+      "weight": 26.99601500324494,
+      "unresolvedCusip": true
+    },
+    {
+      "cusip": "G9460G101",
+      "ticker": "G9460G101",
+      "exchange": "OTHER",
+      "nameOfIssuer": "VALARIS LTD",
+      "nameEn": "VALARIS LTD",
+      "titleOfClass": "CL A",
+      "value": 23138539,
+      "shares": 459098,
+      "shareType": "SH",
+      "weight": 5.755279558132376,
+      "unresolvedCusip": true
+    }
+  ]
+}

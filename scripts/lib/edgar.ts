@@ -9,9 +9,34 @@
  */
 
 import { setTimeout as sleep } from "node:timers/promises";
+import { setGlobalDispatcher, Agent, ProxyAgent } from "undici";
 
 const SEC_DATA = "https://data.sec.gov";
 const SEC_ARCHIVES = "https://www.sec.gov/Archives";
+
+// Network setup:
+//  - Node fetch (undici) does NOT auto-honour HTTPS_PROXY env. If the host
+//    runs traffic through a local proxy (Clash, mitmproxy, corp gateway),
+//    we must wire it explicitly.
+//  - data.sec.gov also advertises IPv6 addresses that are unroutable from
+//    some networks; default 10s connect timeout is tight when the agent
+//    falls back through multiple addresses.
+const PROXY_URL =
+  process.env.HTTPS_PROXY ||
+  process.env.https_proxy ||
+  process.env.HTTP_PROXY ||
+  process.env.http_proxy ||
+  "";
+
+setGlobalDispatcher(
+  PROXY_URL
+    ? new ProxyAgent({ uri: PROXY_URL, connect: { timeout: 30_000 } })
+    : new Agent({ connect: { timeout: 30_000, family: 4 } }),
+);
+
+if (PROXY_URL) {
+  console.log(`[edgar] using HTTPS_PROXY=${PROXY_URL}`);
+}
 
 const UA = process.env.SEC_USER_AGENT;
 if (!UA || UA.includes("your-email@example.com")) {
@@ -121,11 +146,28 @@ export async function fetchInfoTableXml(
     directory: { item: Array<{ name: string; type?: string }> };
   };
 
-  const infoEntry = index.directory.item.find(
-    (f) => f.name.toLowerCase().includes("infotable") && f.name.toLowerCase().endsWith(".xml"),
+  // Filename heuristic across filers:
+  //   Most: "infotable.xml" / "form13fInfoTable.xml" / "<acc>_infotable.xml"
+  //   Some big filers (Berkshire): the InfoTable is the SEC schema number,
+  //     e.g. "50240.xml". The only other .xml is "primary_doc.xml" (form metadata).
+  // Strategy: prefer name match, else the unique non-primary_doc .xml.
+  const xmlFiles = index.directory.item.filter((f) =>
+    f.name.toLowerCase().endsWith(".xml"),
+  );
+  let infoEntry = xmlFiles.find((f) =>
+    f.name.toLowerCase().includes("infotable"),
   );
   if (!infoEntry) {
-    throw new Error(`[edgar] No infoTable.xml found in ${folderUrl}`);
+    const nonPrimary = xmlFiles.filter(
+      (f) => f.name.toLowerCase() !== "primary_doc.xml",
+    );
+    if (nonPrimary.length === 1) infoEntry = nonPrimary[0];
+  }
+  if (!infoEntry) {
+    const names = xmlFiles.map((f) => f.name).join(", ");
+    throw new Error(
+      `[edgar] No infoTable.xml found in ${folderUrl}  (xmls: ${names || "none"})`,
+    );
   }
 
   const xmlUrl = `${folderUrl}${infoEntry.name}`;

@@ -13,9 +13,11 @@
  *   npx tsx scripts/fetch-13f.ts --cik 0001067983   # Berkshire, for peer pulls later
  *
  * Flags:
- *   --limit N    fetch only the N most recent reports (default 5)
- *   --cik <id>   override CIK (default 0001759760 = H&H)
- *   --force      re-download even if local snapshot exists
+ *   --limit N           fetch only the N most recent reports (default 5)
+ *   --cik <id>          override CIK (default 0001759760 = H&H)
+ *   --force             re-download even if local snapshot exists
+ *   --out-dir <path>    write snapshots under this dir (default data/13f-history)
+ *                       — use this to isolate peer pulls, e.g. data/peers/berkshire
  */
 
 import "./lib/load-env";
@@ -39,15 +41,22 @@ interface CliArgs {
   limit: number;
   cik: string;
   force: boolean;
+  outDir: string;
 }
 
 function parseArgs(argv: string[]): CliArgs {
-  const args: CliArgs = { limit: 5, cik: DEFAULT_CIK, force: false };
+  const args: CliArgs = {
+    limit: 5,
+    cik: DEFAULT_CIK,
+    force: false,
+    outDir: "data/13f-history",
+  };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--limit") args.limit = Number(argv[++i]);
     else if (a === "--cik") args.cik = argv[++i];
     else if (a === "--force") args.force = true;
+    else if (a === "--out-dir") args.outDir = argv[++i];
   }
   return args;
 }
@@ -186,8 +195,9 @@ async function main() {
     return;
   }
 
-  const outDir = resolve(process.cwd(), "data/13f-history");
+  const outDir = resolve(process.cwd(), args.outDir);
   mkdirSync(outDir, { recursive: true });
+  console.log(`[fetch-13f] writing to ${outDir}`);
 
   const summary: Array<{
     tag: string;

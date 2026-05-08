@@ -1,0 +1,129 @@
+{
+  "generatedAt": "2026-05-08T15:39:49.663Z",
+  "hhFilerCik": "0001759760",
+  "hhFilerName": "H&H International Investment, LLC",
+  "hhReportDate": "2025-12-31",
+  "hhFilingDate": "2026-02-17",
+  "hhTotalValue": 17488569921,
+  "hhEquityCusipCount": 14,
+  "peers": [
+    {
+      "name": "BERKSHIRE HATHAWAY INC",
+      "cik": "0001067983",
+      "reportDate": "2025-12-31",
+      "filingDate": "2026-02-17",
+      "totalValue": 274160086701,
+      "totalPositions": 110,
+      "sharedHoldings": [
+        {
+          "cusip": "037833100",
+          "ticker": "AAPL",
+          "nameEn": "Apple Inc.",
+          "nameZh": "苹果公司",
+          "hhWeight": 50.301332543129895,
+          "peerWeight": 22.60056743802233,
+          "hhValue": 8796983713,
+          "peerValue": 61961735283,
+          "minWeight": 22.60056743802233
+        },
+        {
+          "cusip": "674599105",
+          "ticker": "OXY",
+          "nameEn": "Occidental Petroleum Corp.",
+          "nameZh": "西方石油",
+          "hhWeight": 3.097207572985064,
+          "peerWeight": 3.9737336583502993,
+          "hhValue": 541657312,
+          "peerValue": 10894391643,
+          "minWeight": 3.097207572985064
+        }
+      ],
+      "overlapCount": 2,
+      "overlapHhWeight": 53.39854011611496,
+      "overlapPeerWeight": 26.57430109637263,
+      "overlapMinWeight": 25.697775011007394
+    },
+    {
+      "name": "Himalaya Capital Management LLC",
+      "cik": "0001709323",
+      "reportDate": "2025-12-31",
+      "filingDate": "2026-02-19",
+      "totalValue": 3568876223,
+      "totalPositions": 9,
+      "sharedHoldings": [
+        {
+          "cusip": "084670702",
+          "ticker": "BRK.B",
+          "nameEn": "Berkshire Hathaway Inc. Class B",
+          "nameZh": "伯克希尔 B",
+          "hhWeight": 20.625556779623434,
+          "peerWeight": 12.644135206815212,
+          "hhValue": 3607114919,
+          "peerValue": 451253535,
+          "minWeight": 12.644135206815212
+        },
+        {
+          "cusip": "722304102",
+          "ticker": "PDD",
+          "nameEn": "PDD Holdings Inc. (Sponsored ADS)",
+          "nameZh": "拼多多",
+          "hhWeight": 7.4800040192491615,
+          "peerWeight": 14.640494299933584,
+          "hhValue": 1308145733,
+          "peerValue": 522501120,
+          "minWeight": 7.4800040192491615
+        },
+        {
+          "cusip": "02079K107",
+          "ticker": "GOOG",
+          "nameEn": "Alphabet Inc. Class C",
+          "nameZh": "谷歌 C",
+          "hhWeight": 3.3291716968857124,
+          "peerWeight": 21.553505695789998,
+          "hhValue": 582224520,
+          "peerValue": 769217940,
+          "minWeight": 3.3291716968857124
+        },
+        {
+          "cusip": "674599105",
+          "ticker": "OXY",
+          "nameEn": "Occidental Petroleum Corp.",
+          "nameZh": "西方石油",
+          "hhWeight": 3.097207572985064,
+          "peerWeight": 1.6896769804280207,
+          "hhValue": 541657312,
+          "peerValue": 60302480,
+          "minWeight": 1.6896769804280207
+        },
+        {
+          "cusip": "037833100",
+          "ticker": "AAPL",
+          "nameEn": "Apple Inc.",
+          "nameZh": "苹果公司",
+          "hhWeight": 50.301332543129895,
+          "peerWeight": 0.8424981456690884,
+          "hhValue": 8796983713,
+          "peerValue": 30067716,
+          "minWeight": 0.8424981456690884
+        }
+      ],
+      "overlapCount": 5,
+      "overlapHhWeight": 84.83327261187327,
+      "overlapPeerWeight": 51.370310328635895,
+      "overlapMinWeight": 25.985486049047196
+    },
+    {
+      "name": "Dalal Street, LLC",
+      "cik": "0001549575",
+      "reportDate": "2025-12-31",
+      "filingDate": "2026-02-13",
+      "totalValue": 402040227,
+      "totalPositions": 4,
+      "sharedHoldings": [],
+      "overlapCount": 0,
+      "overlapHhWeight": 0,
+      "overlapPeerWeight": 0,
+      "overlapMinWeight": 0
+    }
+  ]
+}

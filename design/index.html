@@ -1,0 +1,1169 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>段永平 · H&H 实时持仓看板 / DUAN YONGPING — H&H REAL-TIME HOLDINGS ATLAS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Cormorant+SC:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300;1,6..72,400&family=Noto+Serif+SC:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500&family=JetBrains+Mono:wght@300;400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+:root {
+  /* ── 背景三层 · 古墨夜色 ───────────────────── */
+  --bg-ink:    #0c0c10;   /* 最深，页面底色 */
+  --bg-paper:  #14141a;   /* 卡片纸面 */
+  --bg-raised: #1c1c24;   /* 高亮卡片 / drawer */
+
+  /* ── 边线四层 · 金色阶 ───────────────────── */
+  --line-hair:   rgba(201,169,97,0.10);
+  --line-rule:   rgba(201,169,97,0.20);
+  --line-accent: rgba(201,169,97,0.45);
+  --line-mute:   rgba(245,241,232,0.06);
+
+  /* ── 文字四层 · 米白旧纸 ───────────────────── */
+  --ink-1: #f5f1e8;       /* 标题 / 关键数字 */
+  --ink-2: #c5beae;       /* 正文 */
+  --ink-3: #8a8378;       /* 元信息 */
+  --ink-4: #5a5450;       /* 弱化 */
+  --ink-5: #38342f;       /* 极弱 */
+
+  /* ── 金色三阶 · 私人银行年报 ─────────────── */
+  --gold-deep:  #6b5a32;
+  --gold:       #c9a961;
+  --gold-light: #e4cc92;
+  --gold-glow:  rgba(228,204,146,0.18);
+
+  /* ── 涨跌色 · 朱砂红 / 旧瓷青 ─────────────── */
+  --rise: #c0392b;
+  --rise-soft: rgba(192,57,43,0.16);
+  --fall: #4a8770;
+  --fall-soft: rgba(74,135,112,0.16);
+
+  /* ── 字体栈 ───────────────────── */
+  --serif-display: 'Cormorant Garamond', 'Noto Serif SC', 'Songti SC', serif;
+  --serif-cn:      'Noto Serif SC', 'Songti SC', serif;
+  --serif-quote:   'Newsreader', 'Cormorant Garamond', 'Noto Serif SC', serif;
+  --sc:            'Cormorant SC', 'Cormorant Garamond', serif;
+  --sans:          'Plus Jakarta Sans', 'Noto Sans SC', system-ui, sans-serif;
+  --mono:          'JetBrains Mono', ui-monospace, monospace;
+}
+
+* { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+html, body {
+  background: var(--bg-ink);
+  color: var(--ink-1);
+  font-family: var(--sans);
+  font-feature-settings: 'ss01','calt','liga';
+}
+
+/* 全局柔光 + 纸张噪点 */
+body::before {
+  content:''; position: fixed; inset: 0; pointer-events: none; z-index: 60;
+  background:
+    radial-gradient(ellipse at 18% -8%, rgba(201,169,97,0.05), transparent 45%),
+    radial-gradient(ellipse at 92% 110%, rgba(192,57,43,0.04), transparent 50%);
+  mix-blend-mode: screen;
+}
+body::after {
+  content:''; position: fixed; inset: 0; pointer-events: none; z-index: 61; opacity: .55;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='280' height='280'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.05 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+/* ───────────────── 字体 utility ───────────────── */
+.h-display    { font-family: var(--serif-display); font-weight: 400; letter-spacing: -0.012em; }
+.h-display-it { font-family: var(--serif-display); font-style: italic; font-weight: 400; letter-spacing: -0.01em; }
+.h-cn         { font-family: var(--serif-cn); }
+.h-quote      { font-family: var(--serif-quote); font-style: italic; font-weight: 300; }
+.h-sc         { font-family: var(--sc); font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; }
+.h-mono       { font-family: var(--mono); font-feature-settings: 'tnum' 1; font-variant-numeric: tabular-nums; }
+.lbl          { font-family: var(--sc); font-size: 10px; letter-spacing: 0.20em; color: var(--ink-3); text-transform: uppercase; }
+.lbl-sm       { font-family: var(--sc); font-size: 9px;  letter-spacing: 0.18em; color: var(--ink-4); text-transform: uppercase; }
+.tnum         { font-feature-settings: 'tnum' 1; font-variant-numeric: tabular-nums; }
+
+/* ───────────────── 段落 / 引用 ───────────────── */
+.pull-quote { font-family: var(--serif-quote); font-style: italic; font-weight: 300; letter-spacing: 0.005em; }
+.brush      { font-family: var(--serif-cn); font-style: italic; font-weight: 500; }
+
+/* ───────────────── 古籍版心 / 卡片 ───────────────── */
+.ban-xin {
+  position: relative;
+  border: 1px solid var(--line-rule);
+  background: var(--bg-paper);
+  padding: 1.4rem;
+}
+.corner-mark {
+  position: absolute; width: 7px; height: 7px;
+  border: 1px solid var(--line-accent);
+}
+.corner-mark.tl { top: -1px; left: -1px;   border-right: 0; border-bottom: 0; }
+.corner-mark.tr { top: -1px; right: -1px;  border-left: 0;  border-bottom: 0; }
+.corner-mark.bl { bottom: -1px; left: -1px;  border-right: 0; border-top: 0; }
+.corner-mark.br { bottom: -1px; right: -1px; border-left: 0;  border-top: 0; }
+
+/* ───────────────── 段印章 ───────────────── */
+.seal {
+  width: 92px; height: 92px;
+  border: 2px solid var(--gold);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--serif-cn); font-weight: 700; font-size: 60px;
+  color: var(--gold-light);
+  background:
+    repeating-linear-gradient(45deg, rgba(228,204,146,0.05) 0 2px, transparent 2px 4px),
+    rgba(192,57,43,0.06);
+  position: relative;
+  letter-spacing: 0;
+  transform: rotate(-2deg);
+  box-shadow: 0 0 0 1px rgba(192,57,43,0.10), 0 0 28px -6px rgba(192,57,43,0.20);
+}
+.seal::after { content:''; position: absolute; inset: 4px; border: 1px solid var(--line-accent); }
+
+/* ───────────────── 表格 ───────────────── */
+.book-table { width: 100%; border-collapse: collapse; }
+.book-table thead th {
+  font-family: var(--sc); font-weight: 500; letter-spacing: 0.16em;
+  text-transform: uppercase; font-size: 10px; color: var(--ink-3);
+  padding: 14px 12px; text-align: left;
+  border-top: 1px solid var(--line-rule);
+  border-bottom: 1px solid var(--line-rule);
+}
+.book-table td {
+  padding: 18px 12px;
+  border-bottom: 1px solid var(--line-mute);
+  vertical-align: middle;
+  transition: background 0.18s ease;
+}
+.book-table tr.row { position: relative; cursor: pointer; }
+.book-table tr.row::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+  width: 0; background: var(--gold);
+  transition: width 0.22s cubic-bezier(.2,.7,.2,1);
+}
+.book-table tr.row:hover::before { width: 2px; }
+.book-table tr.row:hover td      { background: rgba(201,169,97,0.025); }
+.num-cell { font-family: var(--mono); font-feature-settings: 'tnum' 1; font-variant-numeric: tabular-nums; }
+.idx { font-family: var(--serif-display); font-style: italic; color: var(--ink-3); font-size: 14px; }
+
+.rise { color: var(--rise); }
+.fall { color: var(--fall); }
+
+/* ───────────────── 徽章 · 直角 sharp ───────────────── */
+.badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.10em;
+  padding: 3px 8px; border: 1px solid; text-transform: uppercase;
+  background: transparent;
+}
+.badge-new   { color: var(--gold-light); border-color: var(--gold); background: rgba(228,204,146,0.05); }
+.badge-add   { color: var(--rise); border-color: rgba(192,57,43,0.50); background: var(--rise-soft); }
+.badge-cut   { color: var(--fall); border-color: rgba(74,135,112,0.50); background: var(--fall-soft); }
+.badge-close { color: var(--ink-3); border-color: var(--line-mute); }
+.badge-hold  { color: var(--ink-3); border-color: transparent; }
+
+/* "本分" 长持标记 */
+.tenet {
+  font-family: var(--serif-cn); font-weight: 500;
+  font-size: 10px; color: var(--gold-light);
+  border: 1px solid var(--gold-deep);
+  padding: 2px 8px; letter-spacing: 0.55em; padding-right: 3px;
+}
+.opt-tag {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em;
+  color: var(--gold-light);
+  border: 1px solid var(--gold-deep); padding: 1px 5px;
+}
+
+/* ───────────────── tab ───────────────── */
+.tab-bar { border-bottom: 1px solid var(--line-rule); display: flex; gap: 0; align-items: stretch; }
+.tab {
+  font-family: var(--sc); letter-spacing: 0.20em; font-size: 11px;
+  padding: 14px 26px 14px 0; margin-right: 28px;
+  color: var(--ink-3); position: relative; cursor: pointer;
+  transition: color 0.2s ease;
+  display: flex; align-items: baseline; gap: 10px;
+}
+.tab:hover { color: var(--ink-2); }
+.tab.is-active { color: var(--ink-1); }
+.tab.is-active::after {
+  content:''; position: absolute; left: 0; right: 26px; bottom: -1px;
+  height: 1px; background: var(--gold);
+}
+.tab .est {
+  font-family: var(--sans); font-weight: 400; font-size: 9px;
+  letter-spacing: 0.10em; color: var(--ink-4);
+  padding: 2px 6px; border: 1px dashed var(--line-mute);
+  text-transform: none;
+}
+
+/* ───────────────── 权重条 ───────────────── */
+.weight-bar { height: 2px; background: var(--line-mute); position: relative; overflow: hidden; }
+.weight-bar > i {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  background: linear-gradient(90deg, var(--gold-deep), var(--gold) 60%, var(--gold-light));
+}
+
+/* ───────────────── 大数字 ───────────────── */
+.big-num { font-family: var(--serif-display); font-weight: 300; letter-spacing: -0.022em; line-height: 1; }
+
+/* ───────────────── 估值热力图 ───────────────── */
+.heat-grid {
+  display: grid; grid-template-columns: repeat(6, 1fr);
+  gap: 1px; background: var(--line-hair); padding: 1px;
+  border: 1px solid var(--line-rule);
+}
+.heat-cell {
+  aspect-ratio: 1.05;
+  padding: 14px;
+  display: flex; flex-direction: column; justify-content: space-between;
+  position: relative; transition: transform 0.18s ease;
+  background: var(--bg-paper);
+}
+.heat-cell:hover { transform: translateY(-2px); z-index: 2; outline: 1px solid var(--gold); outline-offset: -1px; }
+.heat-cell .tk  { font-family: var(--serif-display); font-size: 22px; line-height: 1; color: var(--ink-1); }
+.heat-cell .pe  { font-family: var(--mono); font-size: 11px; color: var(--ink-2); }
+.heat-cell .pct { font-family: var(--mono); font-size: 9px; color: var(--ink-3); letter-spacing: 0.05em; }
+.heat-q1 { background: linear-gradient(135deg, rgba(74,135,112,0.34), rgba(74,135,112,0.18)); }
+.heat-q2 { background: linear-gradient(135deg, rgba(74,135,112,0.16), rgba(74,135,112,0.06)); }
+.heat-q3 { background: linear-gradient(135deg, rgba(192,57,43,0.10), rgba(192,57,43,0.20)); }
+.heat-q4 { background: linear-gradient(135deg, rgba(192,57,43,0.20), rgba(192,57,43,0.40)); }
+.heat-vacant { background: transparent; border: 1px dashed var(--line-mute); }
+
+/* ───────────────── 链接 ───────────────── */
+.gold-link { color: var(--gold-light); border-bottom: 1px solid var(--gold-deep); transition: all 0.2s ease; }
+.gold-link:hover { color: var(--gold); border-bottom-color: var(--gold); }
+
+/* ───────────────── 节标题 ───────────────── */
+.section-title { display: flex; align-items: baseline; gap: 16px; }
+.section-title .cn { font-family: var(--serif-cn); color: var(--ink-3); font-size: 13px; letter-spacing: 0.42em; }
+
+/* ───────────────── tooltip ───────────────── */
+.tooltip { position: relative; }
+.tooltip:hover::before {
+  content: attr(data-tip);
+  position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+  white-space: nowrap; background: var(--bg-raised); border: 1px solid var(--line-rule);
+  padding: 6px 10px; font-family: var(--mono); font-size: 10px; color: var(--ink-2);
+  z-index: 30; letter-spacing: 0.05em;
+}
+
+/* ───────────────── 入场动画 ───────────────── */
+@keyframes rise-fade {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.stagger > * { opacity: 0; animation: rise-fade .75s ease forwards; }
+.stagger > *:nth-child(1){ animation-delay: 0.05s; }
+.stagger > *:nth-child(2){ animation-delay: 0.18s; }
+.stagger > *:nth-child(3){ animation-delay: 0.32s; }
+.stagger > *:nth-child(4){ animation-delay: 0.46s; }
+.stagger > *:nth-child(5){ animation-delay: 0.60s; }
+.stagger > *:nth-child(6){ animation-delay: 0.74s; }
+
+@keyframes draw-x { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.gold-rule {
+  display: block; height: 1px; transform-origin: center;
+  animation: draw-x 1s ease forwards;
+  background: linear-gradient(90deg, transparent, var(--gold) 20%, var(--gold) 80%, transparent);
+}
+
+@keyframes pulse-dot {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50%     { opacity: 0.55; transform: scale(0.85); }
+}
+.pulse { animation: pulse-dot 2.4s ease-in-out infinite; }
+
+/* ───────────────── 当日表现条 ───────────────── */
+.spark { display: flex; align-items: end; gap: 2px; height: 28px; }
+.spark > i { display: block; }
+
+/* ───────────────── drawer ───────────────── */
+.drawer-shadow { box-shadow: -1px 0 0 var(--line-rule), -32px 0 64px -32px rgba(0,0,0,0.6); }
+
+/* ───────────────── 古籍鱼尾 ───────────────── */
+.fishtail {
+  display: inline-block; width: 0; height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 7px solid var(--gold);
+  margin: 0 8px; vertical-align: middle;
+}
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- ════════════════════ 顶部 · 时间戳条 ════════════════════ -->
+<div class="border-b" style="border-color: var(--line-mute);">
+  <div class="max-w-[1480px] mx-auto px-10 flex items-center justify-between" style="height: 36px;">
+    <div class="flex items-center gap-5 lbl">
+      <span style="color: var(--gold-light);">丙午年</span>
+      <span style="color: var(--ink-5);">·</span>
+      <span>季春</span>
+      <span style="color: var(--ink-5);">·</span>
+      <span class="h-mono" style="color: var(--ink-2); letter-spacing: 0.10em;">MMXXVI · 04 · 30 · WED</span>
+    </div>
+    <div class="flex items-center gap-7" style="font-family: var(--mono); color: var(--ink-3); font-size: 10px;">
+      <span class="flex items-center gap-2">
+        <span class="pulse inline-block" style="width:6px;height:6px;border-radius:50%;background:var(--rise);box-shadow:0 0 8px var(--rise);"></span>
+        QUOTE / 实时 · 28 s ago
+      </span>
+      <span class="flex items-center gap-2">
+        <span class="inline-block" style="width:6px;height:6px;background:var(--gold);"></span>
+        13F / 2025-12-31 · filed 02-14
+      </span>
+      <span class="flex items-center gap-2">
+        <span class="inline-block" style="width:6px;height:6px;background:var(--ink-3);"></span>
+        FUNDAMENTALS / EOD · 04-29
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ HERO ════════════════════ -->
+<header class="max-w-[1480px] mx-auto px-10 pt-14 pb-10 stagger">
+  <div class="grid grid-cols-12 items-end gap-10">
+    <!-- 左：印章 + 主标题 -->
+    <div class="col-span-7 flex items-end gap-7">
+      <div class="seal shrink-0">段</div>
+      <div>
+        <div class="lbl-sm" style="color: var(--gold);">EST. MMXVIII · MENLO PARK CALIFORNIA</div>
+        <h1 class="h-display mt-1" style="font-size: 58px; line-height: 1; color: var(--ink-1);">
+          段永平
+          <span style="color: var(--gold-deep); font-size: 38px; font-style: italic; padding: 0 8px;">·</span>
+          H&amp;H
+          <span class="h-display-it block mt-2" style="font-size: 36px; color: var(--gold);">
+            Real-Time Holdings Atlas
+          </span>
+        </h1>
+        <div class="mt-4 flex items-center gap-3 h-mono" style="font-size: 11px; color: var(--ink-3); letter-spacing: 0.05em;">
+          <span>CIK 0001759760</span>
+          <span style="color: var(--ink-5);">/</span>
+          <span>FORM 13F-HR</span>
+          <span style="color: var(--ink-5);">/</span>
+          <span>SEC EDGAR · DAILY MIRROR</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右：导航 -->
+    <nav class="col-span-5 flex justify-end items-center gap-9 h-sc" style="font-size: 11px;">
+      <a class="cursor-pointer" style="color: var(--ink-1);">HOLDINGS</a>
+      <a class="cursor-pointer" style="color: var(--ink-3);">QUARTERLY</a>
+      <a class="cursor-pointer" style="color: var(--ink-3);">VALUATION</a>
+      <a class="cursor-pointer" style="color: var(--ink-3);">STATEMENTS</a>
+      <a class="cursor-pointer" style="color: var(--ink-3);">PEERS</a>
+      <a class="cursor-pointer" style="color: var(--gold-light); padding: 6px 12px; border: 1px solid var(--gold-deep); letter-spacing: 0.20em;">
+        订阅 · SUBSCRIBE
+      </a>
+    </nav>
+  </div>
+
+  <div class="mt-10 gold-rule"></div>
+</header>
+
+<!-- ════════════════════ 引言 + 免责 ════════════════════ -->
+<section class="max-w-[1480px] mx-auto px-10 grid grid-cols-12 gap-10 mb-14 stagger">
+  <!-- 引言 -->
+  <div class="col-span-7">
+    <div class="lbl mb-5">QUOTATION OF THE DAY <span class="fishtail"></span> 大道无形我有型</div>
+    <blockquote class="pull-quote" style="font-size: 30px; line-height: 1.45; color: var(--ink-1);">
+      &ldquo;<span class="h-cn">本分这两个字</span><span style="color: var(--ink-3);">,</span>
+      <span class="h-cn">是我们公司的核心</span><span style="color: var(--ink-3);">。</span>
+      <span class="h-cn">投资也是同样的道理 — </span>
+      <em>do the right thing, do things right</em><span style="color: var(--ink-3);">.</span>&rdquo;
+    </blockquote>
+    <div class="mt-5 flex items-center gap-4 lbl-sm">
+      <span style="color: var(--ink-3);">— 段永平 · 雪球 · 2018</span>
+      <span style="color: var(--ink-5);">·</span>
+      <a class="gold-link cursor-pointer">阅读全文 / READ</a>
+    </div>
+  </div>
+
+  <!-- 免责声明 · 朱砂封条样式 -->
+  <aside class="col-span-5 ban-xin"
+         style="background: linear-gradient(180deg, rgba(192,57,43,0.06), transparent 70%); padding: 22px 24px;">
+    <div class="corner-mark tl"></div><div class="corner-mark tr"></div>
+    <div class="corner-mark bl"></div><div class="corner-mark br"></div>
+    <div class="flex items-center gap-2 mb-3">
+      <span class="lbl" style="color: var(--rise);">⚠ DISCLOSURE FRAGMENT · 申报片段</span>
+    </div>
+    <div class="h-cn" style="font-size: 14px; line-height: 1.85; color: var(--ink-2);">
+      本看板仅同步 <strong style="color: var(--ink-1);">H&amp;H International Investment, LLC</strong>
+      在 SEC 之 13F-HR 申报。段永平本人曾于雪球公开提及："其实我管的账号里有一个账号里拼多多是第二大持股。"
+      <span style="color: var(--ink-3);">— 故 13F 不能等同于其全部资产配置。</span>
+    </div>
+    <div class="mt-4 h-mono" style="font-size: 10px; color: var(--ink-3); line-height: 1.7;">
+      不覆盖 / NOT COVERED:
+      <div style="color: var(--ink-2); margin-top: 4px;">
+        茅台 (A股)　·　腾讯 (00700.HK)　·　个人 IBKR　·　家族其他实体
+      </div>
+    </div>
+  </aside>
+</section>
+
+<!-- ════════════════════ 4 张 SUMMARY 卡 ════════════════════ -->
+<section class="max-w-[1480px] mx-auto px-10 mb-16 stagger">
+  <div class="grid grid-cols-12 gap-6">
+
+    <!-- 卡 1 · 披露市值 -->
+    <article class="col-span-3 ban-xin" style="padding: 24px 22px;">
+      <div class="corner-mark tl"></div><div class="corner-mark tr"></div>
+      <div class="corner-mark bl"></div><div class="corner-mark br"></div>
+      <div class="lbl-sm" style="color: var(--gold); letter-spacing: 0.22em;">AS-OF VALUE · 披露市值</div>
+      <div class="big-num tnum mt-4" style="font-size: 60px;">
+        $17.51<span style="font-size: 26px; color: var(--ink-3);"> B</span>
+      </div>
+      <div class="mt-1 h-mono" style="font-size: 11px; color: var(--ink-3);">
+        Q4 2025 · 14 positions
+      </div>
+      <div class="mt-5 weight-bar"><i style="width: 78%;"></i></div>
+      <div class="mt-2 flex justify-between h-mono" style="font-size: 10px; color: var(--ink-4);">
+        <span>vs Q3 $14.20 B</span>
+        <span class="rise">+23.3%</span>
+      </div>
+    </article>
+
+    <!-- 卡 2 · 当日 -->
+    <article class="col-span-3 ban-xin" style="padding: 24px 22px;">
+      <div class="corner-mark tl"></div><div class="corner-mark tr"></div>
+      <div class="corner-mark bl"></div><div class="corner-mark br"></div>
+      <div class="lbl-sm" style="color: var(--gold); letter-spacing: 0.22em;">TODAY · 当日组合</div>
+      <div class="big-num tnum mt-4 rise" style="font-size: 60px;">
+        +0.84<span style="font-size: 26px;">%</span>
+      </div>
+      <div class="mt-1 h-mono" style="font-size: 11px; color: var(--ink-3);">
+        +$147.1 M · 14:08 · NYSE OPEN
+      </div>
+      <div class="mt-5 spark">
+        <i style="width:6.6%;height:75%;background:var(--rise);"></i>
+        <i style="width:6.6%;height:60%;background:var(--rise);"></i>
+        <i style="width:6.6%;height:30%;background:var(--fall);"></i>
+        <i style="width:6.6%;height:90%;background:var(--rise);"></i>
+        <i style="width:6.6%;height:48%;background:var(--rise);"></i>
+        <i style="width:6.6%;height:22%;background:var(--fall);"></i>
+        <i style="width:6.6%;height:55%;background:var(--rise);"></i>
+        <i style="width:6.6%;height:38%;background:var(--rise);"></i>
+        <i style="width:6.6%;height:42%;background:var(--rise);"></i>
+        <i style="width:6.6%;height:15%;background:var(--fall);"></i>
+        <i style="width:6.6%;height:33%;background:var(--rise);"></i>
+        <i style="width:6.6%;height:62%;background:var(--rise);"></i>
+        <i style="width:6.6%;height:78%;background:var(--rise);"></i>
+      </div>
+    </article>
+
+    <!-- 卡 3 · 报告期 -->
+    <article class="col-span-3 ban-xin" style="padding: 24px 22px;">
+      <div class="corner-mark tl"></div><div class="corner-mark tr"></div>
+      <div class="corner-mark bl"></div><div class="corner-mark br"></div>
+      <div class="lbl-sm" style="color: var(--gold); letter-spacing: 0.22em;">REPORT · 当前报告期</div>
+      <div class="big-num tnum mt-4" style="font-size: 56px;">
+        2025<span style="color: var(--ink-3); padding: 0 4px;">·</span>Q4
+      </div>
+      <div class="mt-3 h-mono" style="font-size: 11px; color: var(--ink-2); line-height: 1.85;">
+        <span style="color: var(--ink-3);">Period end</span>　　<span style="color: var(--ink-1);">2025-12-31</span><br>
+        <span style="color: var(--ink-3);">Filed at</span>　　　<span style="color: var(--ink-1);">2026-02-14</span><br>
+        <span style="color: var(--ink-3);">SEC delay</span>　　<span style="color: var(--ink-1);">45 days</span>
+      </div>
+    </article>
+
+    <!-- 卡 4 · 下次披露 -->
+    <article class="col-span-3 ban-xin" style="padding: 24px 22px;">
+      <div class="corner-mark tl"></div><div class="corner-mark tr"></div>
+      <div class="corner-mark bl"></div><div class="corner-mark br"></div>
+      <div class="lbl-sm" style="color: var(--gold); letter-spacing: 0.22em;">NEXT · 下次预期披露</div>
+      <div class="big-num mt-4" style="font-size: 44px;">2026 · Q1</div>
+      <div class="big-num h-display-it mt-1" style="font-size: 28px; color: var(--gold-light);">
+        五月中旬
+      </div>
+      <div class="mt-3 h-mono" style="font-size: 11px; color: var(--ink-3); line-height: 1.7;">
+        Window 2026-04-15 → 05-15<br>
+        Statutory deadline 05-15
+      </div>
+      <div class="mt-3 flex items-center gap-2 h-mono" style="font-size: 10px; color: var(--gold-light);">
+        <span style="display: inline-block; width: 10px; height: 1px; background: var(--gold);"></span>
+        <span>T − 15 days</span>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<!-- ════════════════════ TAB · 三市场切换 ════════════════════ -->
+<section class="max-w-[1480px] mx-auto px-10 mb-8">
+  <div class="tab-bar">
+    <div class="tab is-active">
+      <span class="h-cn" style="font-family: var(--serif-cn); letter-spacing: 0.42em; font-size: 13px;">美 · 股</span>
+      <span class="h-mono" style="font-size: 9px; letter-spacing: 0.05em; color: var(--ink-3);">US · 13F-HR · authoritative</span>
+    </div>
+    <div class="tab">
+      <span class="h-cn" style="font-family: var(--serif-cn); letter-spacing: 0.42em; font-size: 13px;">港 · 股</span>
+      <span class="h-mono" style="font-size: 9px; letter-spacing: 0.05em; color: var(--ink-4);">HK</span>
+      <span class="est">参考标 · 公开访谈</span>
+    </div>
+    <div class="tab">
+      <span class="h-cn" style="font-family: var(--serif-cn); letter-spacing: 0.42em; font-size: 13px;">A · 股</span>
+      <span class="h-mono" style="font-size: 9px; letter-spacing: 0.05em; color: var(--ink-4);">CN</span>
+      <span class="est">参考标 · 公开访谈</span>
+    </div>
+    <div class="ml-auto h-mono flex items-center" style="font-size: 10px; color: var(--ink-4); padding: 14px 0;">
+      sort: weight ↓
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════ 主体 · 持仓表 + drawer ════════════════════ -->
+<section class="max-w-[1480px] mx-auto px-10 mb-20 grid grid-cols-12 gap-10">
+
+  <!-- ── 左 · 持仓表 ────────────────────── -->
+  <div class="col-span-8">
+    <div class="section-title mb-1">
+      <span class="h-sc" style="font-size: 12px; color: var(--ink-1);">Holdings · By Weight</span>
+      <span class="cn">持 · 仓 · 总 · 览</span>
+      <span class="ml-auto lbl-sm">tap any row · 点击查看雪球语录</span>
+    </div>
+
+    <table class="book-table mt-3">
+      <thead>
+        <tr>
+          <th style="width: 32px;">#</th>
+          <th>Issuer · 标的</th>
+          <th>Action · 动作</th>
+          <th class="text-right" style="width: 70px;">Qtrs</th>
+          <th class="text-right" style="width: 90px;">Last</th>
+          <th class="text-right" style="width: 80px;">Δ Day</th>
+          <th class="text-right" style="width: 110px;">Disclosed</th>
+          <th class="text-right" style="width: 170px;">Weight · 权重</th>
+          <th class="text-right" style="width: 70px;">PE</th>
+          <th class="text-right" style="width: 70px;">5Y %ile</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <!-- AAPL -->
+        <tr class="row">
+          <td class="idx">i</td>
+          <td>
+            <div class="flex items-baseline gap-3 flex-wrap">
+              <span class="h-display" style="font-size: 21px;">AAPL</span>
+              <span class="h-cn" style="font-size: 12px; color: var(--ink-3);">苹果公司</span>
+              <span class="tenet">本分</span>
+            </div>
+            <div class="lbl-sm mt-1">Apple Inc. · NASDAQ · 037833100</div>
+          </td>
+          <td><span class="badge badge-add">▲ +12.4%</span></td>
+          <td class="text-right num-cell" style="color: var(--ink-2);">28</td>
+          <td class="text-right num-cell">232.84</td>
+          <td class="text-right num-cell rise">+0.71%</td>
+          <td class="text-right num-cell">$5,892.4 M</td>
+          <td class="text-right">
+            <div class="flex items-center justify-end gap-3">
+              <span class="num-cell">33.65%</span>
+              <div class="weight-bar" style="width: 90px;"><i style="width: 92%;"></i></div>
+            </div>
+          </td>
+          <td class="text-right num-cell" style="color: var(--ink-2);">29.4</td>
+          <td class="text-right num-cell rise">81%</td>
+        </tr>
+
+        <!-- BRK.B -->
+        <tr class="row">
+          <td class="idx">ii</td>
+          <td>
+            <div class="flex items-baseline gap-3 flex-wrap">
+              <span class="h-display" style="font-size: 21px;">BRK.B</span>
+              <span class="h-cn" style="font-size: 12px; color: var(--ink-3);">伯克希尔 B</span>
+              <span class="tenet">本分</span>
+            </div>
+            <div class="lbl-sm mt-1">Berkshire Hathaway · NYSE · 084670702</div>
+          </td>
+          <td><span class="badge badge-hold">— hold</span></td>
+          <td class="text-right num-cell" style="color: var(--ink-2);">32</td>
+          <td class="text-right num-cell">486.21</td>
+          <td class="text-right num-cell rise">+0.42%</td>
+          <td class="text-right num-cell">$2,945.1 M</td>
+          <td class="text-right">
+            <div class="flex items-center justify-end gap-3">
+              <span class="num-cell">16.82%</span>
+              <div class="weight-bar" style="width: 90px;"><i style="width: 46%;"></i></div>
+            </div>
+          </td>
+          <td class="text-right num-cell" style="color: var(--ink-2);">11.2</td>
+          <td class="text-right num-cell" style="color: var(--ink-2);">52%</td>
+        </tr>
+
+        <!-- GOOGL -->
+        <tr class="row">
+          <td class="idx">iii</td>
+          <td>
+            <div class="flex items-baseline gap-3 flex-wrap">
+              <span class="h-display" style="font-size: 21px;">GOOGL</span>
+              <span class="h-cn" style="font-size: 12px; color: var(--ink-3);">谷歌 A</span>
+            </div>
+            <div class="lbl-sm mt-1">Alphabet Class A · NASDAQ · 02079K305</div>
+          </td>
+          <td><span class="badge badge-add">▲ +84.0%</span></td>
+          <td class="text-right num-cell" style="color: var(--ink-2);">14</td>
+          <td class="text-right num-cell">198.43</td>
+          <td class="text-right num-cell rise">+1.28%</td>
+          <td class="text-right num-cell">$2,451.0 M</td>
+          <td class="text-right">
+            <div class="flex items-center justify-end gap-3">
+              <span class="num-cell">14.00%</span>
+              <div class="weight-bar" style="width: 90px;"><i style="width: 38%;"></i></div>
+            </div>
+          </td>
+          <td class="text-right num-cell" style="color: var(--ink-2);">23.1</td>
+          <td class="text-right num-cell rise" style="opacity: 0.6;">62%</td>
+        </tr>
+
+        <!-- PDD -->
+        <tr class="row">
+          <td class="idx">iv</td>
+          <td>
+            <div class="flex items-baseline gap-3 flex-wrap">
+              <span class="h-display" style="font-size: 21px;">PDD</span>
+              <span class="h-cn" style="font-size: 12px; color: var(--ink-3);">拼多多</span>
+            </div>
+            <div class="lbl-sm mt-1">PDD Holdings · NASDAQ · 722304101</div>
+          </td>
+          <td><span class="badge badge-add">▲ +35.2%</span></td>
+          <td class="text-right num-cell" style="color: var(--ink-2);">7</td>
+          <td class="text-right num-cell">142.05</td>
+          <td class="text-right num-cell fall">−0.92%</td>
+          <td class="text-right num-cell">$1,720.4 M</td>
+          <td class="text-right">
+            <div class="flex items-center justify-end gap-3">
+              <span class="num-cell">9.83%</span>
+              <div class="weight-bar" style="width: 90px;"><i style="width: 27%;"></i></div>
+            </div>
+          </td>
+          <td class="text-right num-cell" style="color: var(--ink-2);">14.7</td>
+          <td class="text-right num-cell fall">22%</td>
+        </tr>
+
+        <!-- NVDA -->
+        <tr class="row">
+          <td class="idx">v</td>
+          <td>
+            <div class="flex items-baseline gap-3 flex-wrap">
+              <span class="h-display" style="font-size: 21px;">NVDA</span>
+              <span class="h-cn" style="font-size: 12px; color: var(--ink-3);">英伟达</span>
+            </div>
+            <div class="lbl-sm mt-1">NVIDIA Corp · NASDAQ · 67066G104</div>
+          </td>
+          <td><span class="badge badge-new">◆ NEW · 2025 Q1</span></td>
+          <td class="text-right num-cell" style="color: var(--ink-2);">3</td>
+          <td class="text-right num-cell">142.86</td>
+          <td class="text-right num-cell rise">+2.41%</td>
+          <td class="text-right num-cell">$1,486.0 M</td>
+          <td class="text-right">
+            <div class="flex items-center justify-end gap-3">
+              <span class="num-cell">8.49%</span>
+              <div class="weight-bar" style="width: 90px;"><i style="width: 23%;"></i></div>
+            </div>
+          </td>
+          <td class="text-right num-cell" style="color: var(--ink-2);">52.4</td>
+          <td class="text-right num-cell rise">94%</td>
+        </tr>
+
+        <!-- GOOG -->
+        <tr class="row">
+          <td class="idx">vi</td>
+          <td>
+            <div class="flex items-baseline gap-3 flex-wrap">
+              <span class="h-display" style="font-size: 21px;">GOOG</span>
+              <span class="h-cn" style="font-size: 12px; color: var(--ink-3);">谷歌 C</span>
+            </div>
+            <div class="lbl-sm mt-1">Alphabet Class C · NASDAQ · 02079K107</div>
+          </td>
+          <td><span class="badge badge-hold">— hold</span></td>
+          <td class="text-right num-cell" style="color: var(--ink-2);">14</td>
+          <td class="text-right num-cell">200.12</td>
+          <td class="text-right num-cell rise">+1.18%</td>
+          <td class="text-right num-cell">$1,150.2 M</td>
+          <td class="text-right">
+            <div class="flex items-center justify-end gap-3">
+              <span class="num-cell">6.57%</span>
+              <div class="weight-bar" style="width: 90px;"><i style="width: 18%;"></i></div>
+            </div>
+          </td>
+          <td class="text-right num-cell" style="color: var(--ink-2);">23.3</td>
+          <td class="text-right num-cell rise" style="opacity: 0.6;">62%</td>
+        </tr>
+
+        <!-- BABA -->
+        <tr class="row">
+          <td class="idx">vii</td>
+          <td>
+            <div class="flex items-baseline gap-3 flex-wrap">
+              <span class="h-display" style="font-size: 21px;">BABA</span>
+              <span class="h-cn" style="font-size: 12px; color: var(--ink-3);">阿里巴巴</span>
+              <span class="tooltip opt-tag" data-tip="包含 Put/Call 期权头寸">⚙ PUT</span>
+            </div>
+            <div class="lbl-sm mt-1">Alibaba Group · NYSE · 01609W102</div>
+          </td>
+          <td><span class="badge badge-cut">▼ −22.6%</span></td>
+          <td class="text-right num-cell" style="color: var(--ink-2);">22</td>
+          <td class="text-right num-cell">109.77</td>
+          <td class="text-right num-cell fall">−1.42%</td>
+          <td class="text-right num-cell">$960.5 M</td>
+          <td class="text-right">
+            <div class="flex items-center justify-end gap-3">
+              <span class="num-cell">5.49%</span>
+              <div class="weight-bar" style="width: 90px;"><i style="width: 15%;"></i></div>
+            </div>
+          </td>
+          <td class="text-right num-cell" style="color: var(--ink-2);">17.8</td>
+          <td class="text-right num-cell fall">14%</td>
+        </tr>
+
+        <!-- OXY -->
+        <tr class="row">
+          <td class="idx">viii</td>
+          <td>
+            <div class="flex items-baseline gap-3 flex-wrap">
+              <span class="h-display" style="font-size: 21px;">OXY</span>
+              <span class="h-cn" style="font-size: 12px; color: var(--ink-3);">西方石油</span>
+            </div>
+            <div class="lbl-sm mt-1">Occidental Petroleum · NYSE · 674599105</div>
+          </td>
+          <td><span class="badge badge-cut">▼ −5.1%</span></td>
+          <td class="text-right num-cell" style="color: var(--ink-2);">9</td>
+          <td class="text-right num-cell">52.43</td>
+          <td class="text-right num-cell fall">−0.34%</td>
+          <td class="text-right num-cell">$540.2 M</td>
+          <td class="text-right">
+            <div class="flex items-center justify-end gap-3">
+              <span class="num-cell">3.09%</span>
+              <div class="weight-bar" style="width: 90px;"><i style="width: 8%;"></i></div>
+            </div>
+          </td>
+          <td class="text-right num-cell" style="color: var(--ink-2);">12.4</td>
+          <td class="text-right num-cell fall">28%</td>
+        </tr>
+
+        <!-- MSFT -->
+        <tr class="row">
+          <td class="idx">ix</td>
+          <td>
+            <div class="flex items-baseline gap-3 flex-wrap">
+              <span class="h-display" style="font-size: 21px;">MSFT</span>
+              <span class="h-cn" style="font-size: 12px; color: var(--ink-3);">微软</span>
+            </div>
+            <div class="lbl-sm mt-1">Microsoft Corp · NASDAQ · 594918104</div>
+          </td>
+          <td><span class="badge badge-add">▲ +18.0%</span></td>
+          <td class="text-right num-cell" style="color: var(--ink-2);">3</td>
+          <td class="text-right num-cell">418.92</td>
+          <td class="text-right num-cell rise">+0.55%</td>
+          <td class="text-right num-cell">$320.7 M</td>
+          <td class="text-right">
+            <div class="flex items-center justify-end gap-3">
+              <span class="num-cell">1.83%</span>
+              <div class="weight-bar" style="width: 90px;"><i style="width: 5%;"></i></div>
+            </div>
+          </td>
+          <td class="text-right num-cell" style="color: var(--ink-2);">35.8</td>
+          <td class="text-right num-cell rise" style="opacity: 0.7;">76%</td>
+        </tr>
+
+        <!-- TSM -->
+        <tr class="row">
+          <td class="idx">x</td>
+          <td>
+            <div class="flex items-baseline gap-3 flex-wrap">
+              <span class="h-display" style="font-size: 21px;">TSM</span>
+              <span class="h-cn" style="font-size: 12px; color: var(--ink-3);">台积电 ADR</span>
+            </div>
+            <div class="lbl-sm mt-1">Taiwan Semiconductor · NYSE · 874039100</div>
+          </td>
+          <td><span class="badge badge-add">▲ +9.3%</span></td>
+          <td class="text-right num-cell" style="color: var(--ink-2);">3</td>
+          <td class="text-right num-cell">194.37</td>
+          <td class="text-right num-cell rise">+1.04%</td>
+          <td class="text-right num-cell">$182.1 M</td>
+          <td class="text-right">
+            <div class="flex items-center justify-end gap-3">
+              <span class="num-cell">1.04%</span>
+              <div class="weight-bar" style="width: 90px;"><i style="width: 3%;"></i></div>
+            </div>
+          </td>
+          <td class="text-right num-cell" style="color: var(--ink-2);">26.4</td>
+          <td class="text-right num-cell rise" style="opacity: 0.6;">68%</td>
+        </tr>
+
+        <!-- MRNA · 已清仓 -->
+        <tr class="row" style="opacity: 0.55;">
+          <td class="idx">—</td>
+          <td>
+            <div class="flex items-baseline gap-3 flex-wrap">
+              <span class="h-display" style="font-size: 21px; text-decoration: line-through; text-decoration-color: var(--ink-4);">MRNA</span>
+              <span class="h-cn" style="font-size: 12px; color: var(--ink-3);">Moderna</span>
+            </div>
+            <div class="lbl-sm mt-1">Moderna Inc · NASDAQ · 60770K107 · 已清仓 2025 Q2</div>
+          </td>
+          <td><span class="badge badge-close">✕ closed</span></td>
+          <td class="text-right num-cell" style="color: var(--ink-4);">8</td>
+          <td class="text-right num-cell" style="color: var(--ink-4);">26.18</td>
+          <td class="text-right num-cell" style="color: var(--ink-4);">—</td>
+          <td class="text-right num-cell" style="color: var(--ink-4);">prev $74.4 M</td>
+          <td class="text-right num-cell" style="color: var(--ink-4);">—</td>
+          <td class="text-right num-cell" style="color: var(--ink-4);">—</td>
+          <td class="text-right num-cell" style="color: var(--ink-4);">—</td>
+        </tr>
+
+      </tbody>
+    </table>
+
+    <!-- 表格 footer · 合计 -->
+    <div class="mt-4 pt-3 border-t flex justify-between items-baseline h-mono" style="border-color: var(--line-rule); font-size: 11px; color: var(--ink-3);">
+      <span>10 active · 1 closed · 1 with put/call · 2 marked &lt;本分&gt;</span>
+      <span>∑ disclosed <span style="color: var(--ink-1);">$17.51 B</span> · weight 100.81% (incl. options notional)</span>
+    </div>
+  </div>
+
+  <!-- ── 右 · 段永平语录 drawer ────────────────────── -->
+  <aside class="col-span-4">
+    <div class="ban-xin drawer-shadow" style="padding: 26px 24px;">
+      <div class="corner-mark tl"></div><div class="corner-mark tr"></div>
+      <div class="corner-mark bl"></div><div class="corner-mark br"></div>
+
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="lbl" style="color: var(--gold);">XUEQIU · STATEMENTS</div>
+          <div class="h-display mt-2 flex items-baseline gap-3" style="font-size: 26px;">
+            AAPL
+            <span class="h-cn" style="color: var(--ink-3); font-size: 16px;">· 苹果公司</span>
+          </div>
+        </div>
+        <span class="lbl-sm cursor-pointer">关闭 ✕</span>
+      </div>
+
+      <div class="lbl-sm mt-3" style="color: var(--ink-4);">
+        22 statements · 2018 → 2024 · sorted desc
+      </div>
+
+      <!-- 语录 1 -->
+      <div class="border-t mt-6 pt-5" style="border-color: var(--line-mute);">
+        <div class="flex items-center gap-3 mb-3">
+          <span class="lbl-sm" style="color: var(--gold);">2023 · 12 · 16</span>
+          <span class="lbl-sm" style="color: var(--ink-4);">— 雪球</span>
+          <a class="ml-auto lbl-sm gold-link cursor-pointer">原帖 →</a>
+        </div>
+        <p class="pull-quote" style="font-size: 16px; line-height: 1.75; color: var(--ink-1);">
+          &ldquo;<span class="h-cn">买苹果不是因为它便宜</span>，<span class="h-cn">而是因为它好</span>。
+          <em>A great business at a fair price is far better than a fair business at a great price.</em>&rdquo;
+        </p>
+        <div class="mt-3 flex flex-wrap items-center gap-2">
+          <span class="badge" style="border-color: var(--gold-deep); color: var(--gold-light);">本 · 分</span>
+          <span class="badge badge-hold" style="border-color: var(--line-rule);">长 · 期</span>
+          <span class="badge badge-hold" style="border-color: var(--line-rule);">买 · 公 · 司</span>
+        </div>
+      </div>
+
+      <!-- 语录 2 -->
+      <div class="border-t mt-5 pt-5" style="border-color: var(--line-mute);">
+        <div class="flex items-center gap-3 mb-3">
+          <span class="lbl-sm" style="color: var(--gold);">2022 · 09 · 03</span>
+          <span class="lbl-sm" style="color: var(--ink-4);">— 雪球</span>
+          <a class="ml-auto lbl-sm gold-link cursor-pointer">原帖 →</a>
+        </div>
+        <p class="pull-quote" style="font-size: 16px; line-height: 1.75; color: var(--ink-1);">
+          &ldquo;<span class="h-cn">市场短期是投票机</span>，<span class="h-cn">长期是称重机</span> —
+          <em>苹果生意的本质</em><span class="h-cn">没变</span>。&rdquo;
+        </p>
+        <div class="mt-3 flex flex-wrap items-center gap-2">
+          <span class="badge badge-hold" style="border-color: var(--line-rule);">平 · 常 · 心</span>
+          <span class="badge badge-hold" style="border-color: var(--line-rule);">不 · 卖</span>
+        </div>
+      </div>
+
+      <!-- 语录 3 -->
+      <div class="border-t mt-5 pt-5" style="border-color: var(--line-mute);">
+        <div class="flex items-center gap-3 mb-3">
+          <span class="lbl-sm" style="color: var(--gold);">2020 · 04 · 22</span>
+          <span class="lbl-sm" style="color: var(--ink-4);">— 雪球</span>
+          <a class="ml-auto lbl-sm gold-link cursor-pointer">原帖 →</a>
+        </div>
+        <p class="pull-quote" style="font-size: 16px; line-height: 1.75; color: var(--ink-1);">
+          &ldquo;<span class="h-cn">最近卖了不少苹果的</span> <em>put</em>。<span class="h-cn">简单的逻辑</span> —
+          <em>if you'd buy at price X, just sell the put.</em>&rdquo;
+        </p>
+        <div class="mt-3 flex flex-wrap items-center gap-2">
+          <span class="badge" style="border-color: var(--gold-deep); color: var(--gold-light);">卖 · PUT</span>
+          <span class="badge badge-hold" style="border-color: var(--line-rule);">现 · 金 · 流</span>
+        </div>
+      </div>
+
+      <a class="lbl-sm gold-link mt-6 inline-block cursor-pointer">查看 22 条全部语录 →</a>
+    </div>
+  </aside>
+</section>
+
+<!-- ════════════════════ 季度动作面板 ════════════════════ -->
+<section class="max-w-[1480px] mx-auto px-10 mb-20">
+  <div class="section-title mb-7">
+    <span class="h-sc" style="font-size: 12px; color: var(--ink-1);">Quarterly Acts · 2025 Q4 vs Q3</span>
+    <span class="cn">季 · 度 · 动 · 作</span>
+    <span class="ml-auto lbl-sm">comparator delta · cusip-matched</span>
+  </div>
+
+  <div class="grid grid-cols-12 gap-5">
+
+    <!-- 新建仓 -->
+    <article class="col-span-3 ban-xin" style="padding: 22px 20px; min-height: 240px;">
+      <div class="corner-mark tl"></div><div class="corner-mark tr"></div>
+      <div class="corner-mark bl"></div><div class="corner-mark br"></div>
+      <div class="lbl" style="color: var(--gold-light); letter-spacing: 0.22em;">◆ NEW INITIATIONS</div>
+      <div class="h-cn mt-1" style="font-size: 12px; color: var(--ink-3); letter-spacing: 0.42em;">新 · 建 · 仓</div>
+
+      <div class="mt-7 flex flex-col items-center justify-center text-center">
+        <div class="big-num" style="font-size: 56px; color: var(--ink-2);">0</div>
+        <div class="lbl-sm mt-3" style="color: var(--ink-3);">无新仓 · vacant</div>
+      </div>
+
+      <div class="mt-7 pt-3 border-t lbl-sm" style="border-color: var(--line-mute); color: var(--ink-4);">
+        last new: NVDA · 2025 Q1
+      </div>
+    </article>
+
+    <!-- 加仓 -->
+    <article class="col-span-3 ban-xin" style="padding: 22px 20px; min-height: 240px;">
+      <div class="corner-mark tl"></div><div class="corner-mark tr"></div>
+      <div class="corner-mark bl"></div><div class="corner-mark br"></div>
+      <div class="lbl" style="color: var(--rise); letter-spacing: 0.22em;">▲ ADDS · TOP 3</div>
+      <div class="h-cn mt-1" style="font-size: 12px; color: var(--ink-3); letter-spacing: 0.42em;">加 · 仓</div>
+
+      <ul class="mt-5 space-y-4">
+        <li class="flex items-baseline justify-between">
+          <div>
+            <div class="h-display" style="font-size: 17px;">GOOGL</div>
+            <div class="lbl-sm">+1.43 M sh</div>
+          </div>
+          <div class="num-cell rise">+84.0%</div>
+        </li>
+        <li class="flex items-baseline justify-between">
+          <div>
+            <div class="h-display" style="font-size: 17px;">PDD</div>
+            <div class="lbl-sm">+2.20 M sh</div>
+          </div>
+          <div class="num-cell rise">+35.2%</div>
+        </li>
+        <li class="flex items-baseline justify-between">
+          <div>
+            <div class="h-display" style="font-size: 17px;">MSFT</div>
+            <div class="lbl-sm">+125 k sh</div>
+          </div>
+          <div class="num-cell rise">+18.0%</div>
+        </li>
+      </ul>
+    </article>
+
+    <!-- 减仓 -->
+    <article class="col-span-3 ban-xin" style="padding: 22px 20px; min-height: 240px;">
+      <div class="corner-mark tl"></div><div class="corner-mark tr"></div>
+      <div class="corner-mark bl"></div><div class="corner-mark br"></div>
+      <div class="lbl" style="color: var(--fall); letter-spacing: 0.22em;">▼ TRIMS · TOP 3</div>
+      <div class="h-cn mt-1" style="font-size: 12px; color: var(--ink-3); letter-spacing: 0.42em;">减 · 仓</div>
+
+      <ul class="mt-5 space-y-4">
+        <li class="flex items-baseline justify-between">
+          <div>
+            <div class="h-display" style="font-size: 17px;">BABA</div>
+            <div class="lbl-sm">−1.04 M sh</div>
+          </div>
+          <div class="num-cell fall">−22.6%</div>
+        </li>
+        <li class="flex items-baseline justify-between">
+          <div>
+            <div class="h-display" style="font-size: 17px;">OXY</div>
+            <div class="lbl-sm">−110 k sh</div>
+          </div>
+          <div class="num-cell fall">−5.1%</div>
+        </li>
+        <li class="flex items-baseline justify-between" style="opacity: 0.5;">
+          <div>
+            <div class="h-display" style="font-size: 17px; color: var(--ink-3);">— —</div>
+            <div class="lbl-sm">no other trim</div>
+          </div>
+          <div class="num-cell" style="color: var(--ink-4);">—</div>
+        </li>
+      </ul>
+    </article>
+
+    <!-- 清仓 -->
+    <article class="col-span-3 ban-xin" style="padding: 22px 20px; min-height: 240px;">
+      <div class="corner-mark tl"></div><div class="corner-mark tr"></div>
+      <div class="corner-mark bl"></div><div class="corner-mark br"></div>
+      <div class="lbl" style="color: var(--ink-2); letter-spacing: 0.22em;">✕ EXITS</div>
+      <div class="h-cn mt-1" style="font-size: 12px; color: var(--ink-3); letter-spacing: 0.42em;">清 · 仓</div>
+
+      <div class="mt-7 flex flex-col items-center text-center">
+        <div class="big-num" style="font-size: 56px; color: var(--ink-2);">1</div>
+        <div class="h-display mt-2" style="font-size: 18px; text-decoration: line-through; text-decoration-color: var(--ink-4); color: var(--ink-3);">MRNA</div>
+        <div class="lbl-sm mt-1">prev $74.4 M · 8 qtrs held</div>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<!-- ════════════════════ 估值热力图 ════════════════════ -->
+<section class="max-w-[1480px] mx-auto px-10 mb-20">
+  <div class="section-title mb-3">
+    <span class="h-sc" style="font-size: 12px; color: var(--ink-1);">Valuation Heat · PE 5Y Percentile</span>
+    <span class="cn">估 · 值 · 热 · 力 · 图</span>
+    <span class="ml-auto lbl-sm">深绿便宜 · 深红昂贵</span>
+  </div>
+  <div class="lbl-sm mb-5" style="color: var(--ink-4);">
+    即:今日的市盈率,处于该公司过去五年估值区间的什么位置。
+  </div>
+
+  <div class="heat-grid">
+    <div class="heat-cell heat-q4">
+      <div class="lbl-sm" style="color: var(--rise);">EXPENSIVE</div>
+      <div class="tk">NVDA</div>
+      <div>
+        <div class="pe">PE 52.4 · 94%</div>
+        <div class="pct mt-1">vs 5Y avg 28.7</div>
+      </div>
+    </div>
+    <div class="heat-cell heat-q4">
+      <div class="lbl-sm">&nbsp;</div>
+      <div class="tk">AAPL</div>
+      <div>
+        <div class="pe">PE 29.4 · 81%</div>
+        <div class="pct mt-1">vs 5Y avg 24.1</div>
+      </div>
+    </div>
+    <div class="heat-cell heat-q3">
+      <div class="lbl-sm">&nbsp;</div>
+      <div class="tk">MSFT</div>
+      <div>
+        <div class="pe">PE 35.8 · 76%</div>
+        <div class="pct mt-1">vs 5Y avg 31.2</div>
+      </div>
+    </div>
+    <div class="heat-cell heat-q3">
+      <div class="lbl-sm">&nbsp;</div>
+      <div class="tk">TSM</div>
+      <div>
+        <div class="pe">PE 26.4 · 68%</div>
+        <div class="pct mt-1">vs 5Y avg 22.0</div>
+      </div>
+    </div>
+    <div class="heat-cell heat-q3">
+      <div class="lbl-sm">&nbsp;</div>
+      <div class="tk">GOOGL</div>
+      <div>
+        <div class="pe">PE 23.1 · 62%</div>
+        <div class="pct mt-1">vs 5Y avg 21.4</div>
+      </div>
+    </div>
+    <div class="heat-cell heat-q3">
+      <div class="lbl-sm">&nbsp;</div>
+      <div class="tk">GOOG</div>
+      <div>
+        <div class="pe">PE 23.3 · 62%</div>
+        <div class="pct mt-1">vs 5Y avg 21.4</div>
+      </div>
+    </div>
+    <div class="heat-cell heat-q2">
+      <div class="lbl-sm" style="color: var(--ink-3);">FAIR</div>
+      <div class="tk">BRK.B</div>
+      <div>
+        <div class="pe">PE 11.2 · 52%</div>
+        <div class="pct mt-1">vs 5Y avg 10.8</div>
+      </div>
+    </div>
+    <div class="heat-cell heat-q2">
+      <div class="lbl-sm">&nbsp;</div>
+      <div class="tk">OXY</div>
+      <div>
+        <div class="pe">PE 12.4 · 28%</div>
+        <div class="pct mt-1">vs 5Y avg 18.7</div>
+      </div>
+    </div>
+    <div class="heat-cell heat-q1">
+      <div class="lbl-sm" style="color: var(--fall);">CHEAP</div>
+      <div class="tk">PDD</div>
+      <div>
+        <div class="pe">PE 14.7 · 22%</div>
+        <div class="pct mt-1">vs 5Y avg 22.4</div>
+      </div>
+    </div>
+    <div class="heat-cell heat-q1">
+      <div class="lbl-sm">&nbsp;</div>
+      <div class="tk">BABA</div>
+      <div>
+        <div class="pe">PE 17.8 · 14%</div>
+        <div class="pct mt-1">vs 5Y avg 28.2</div>
+      </div>
+    </div>
+    <div class="heat-cell heat-vacant">
+      <div class="lbl-sm" style="color: var(--ink-5);">VACANT</div>
+      <div class="tk h-display-it" style="color: var(--ink-5);">…</div>
+      <div>
+        <div class="pe" style="color: var(--ink-5);">awaiting Q1 26</div>
+      </div>
+    </div>
+    <div class="heat-cell heat-vacant">
+      <div class="lbl-sm" style="color: var(--ink-5);">&nbsp;</div>
+      <div class="tk h-display-it" style="color: var(--ink-5);">…</div>
+      <div>
+        <div class="pe" style="color: var(--ink-5);">vacant slot</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 图例 -->
+  <div class="mt-6 flex items-center gap-7 h-mono" style="font-size: 10px; color: var(--ink-3); letter-spacing: 0.05em;">
+    <span class="flex items-center gap-2"><i class="inline-block heat-q1" style="width:14px; height:14px;"></i> 0 – 25 %ile</span>
+    <span class="flex items-center gap-2"><i class="inline-block heat-q2" style="width:14px; height:14px;"></i> 25 – 50 %ile</span>
+    <span class="flex items-center gap-2"><i class="inline-block heat-q3" style="width:14px; height:14px;"></i> 50 – 75 %ile</span>
+    <span class="flex items-center gap-2"><i class="inline-block heat-q4" style="width:14px; height:14px;"></i> 75 – 100 %ile</span>
+    <span class="ml-auto lbl-sm">数据 EOD · 04-29</span>
+  </div>
+</section>
+
+<!-- ════════════════════ FOOTER ════════════════════ -->
+<footer class="border-t mt-20" style="border-color: var(--line-rule);">
+  <div class="max-w-[1480px] mx-auto px-10 py-12 grid grid-cols-12 gap-10">
+    <div class="col-span-5">
+      <div class="seal" style="width: 60px; height: 60px; font-size: 36px; transform: rotate(-3deg);">段</div>
+      <div class="brush mt-5" style="font-size: 22px; line-height: 1.4; color: var(--gold-light);">
+        &ldquo;stop doing list <span class="h-cn" style="font-style: normal;">比</span> to do list <span class="h-cn" style="font-style: normal;">更重要。</span>&rdquo;
+      </div>
+      <div class="mt-3 lbl-sm">— 大道无形我有型 · 雪球</div>
+    </div>
+    <div class="col-span-3">
+      <div class="lbl mb-4" style="color: var(--gold);">SOURCES · 数据来源</div>
+      <ul class="space-y-2 h-mono" style="font-size: 11px; color: var(--ink-2);">
+        <li>SEC EDGAR · 13F-HR</li>
+        <li>东方财富 · 实时行情</li>
+        <li>雪球 · 大道无形我有型</li>
+        <li>WhaleWisdom · peer mirror</li>
+      </ul>
+    </div>
+    <div class="col-span-4">
+      <div class="lbl mb-4" style="color: var(--gold);">CAVEAT EMPTOR · 投资警示</div>
+      <p style="font-size: 11px; line-height: 1.75; color: var(--ink-3); font-family: var(--sans);">
+        本看板仅作研究参考。段永平本人多次表示
+        <em class="h-quote" style="color: var(--ink-2);">"不要跟着我买"</em>。
+        13F 信息有 ~45 天滞后,持仓可能已变。
+        <strong style="color: var(--ink-2); font-weight: 500;">本工具不构成投资建议。</strong>
+      </p>
+    </div>
+  </div>
+  <div class="border-t" style="border-color: var(--line-mute);">
+    <div class="max-w-[1480px] mx-auto px-10 py-5 flex justify-between items-center h-mono" style="font-size: 10px; color: var(--ink-4);">
+      <span>© MMXXVI · DUAN-YONGPING-DASHBOARD · A SEC EDGAR MIRROR · NO AFFILIATION WITH H&amp;H INTERNATIONAL</span>
+      <span class="flex items-center gap-2">
+        <i class="inline-block" style="width: 6px; height: 6px; background: var(--gold);"></i>
+        Build 0.1 · alpha
+      </span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

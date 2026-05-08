@@ -4,21 +4,25 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/build-static.mjs",
+    "build:next": "next build",
     "start": "next start",
     "lint": "next lint",
     "fetch:13f": "tsx scripts/fetch-13f.ts",
-    "compute:deltas": "tsx scripts/compute-deltas.ts"
+    "compute:deltas": "tsx scripts/compute-deltas.ts",
+    "compute:overlap": "tsx scripts/compute-overlap.ts",
+    "fetch:fundamentals": "tsx scripts/fetch-fundamentals.ts",
+    "audit:shots": "tsx scripts/_audit-shots.ts"
   },
   "dependencies": {
+    "date-fns": "^4.1.0",
+    "fast-xml-parser": "^4.5.0",
     "next": "14.2.18",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "recharts": "^2.13.3",
     "swr": "^2.2.5",
-    "zod": "^3.23.8",
-    "date-fns": "^4.1.0",
-    "fast-xml-parser": "^4.5.0"
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/node": "^22.9.1",
@@ -26,8 +30,10 @@
     "@types/react-dom": "^18.3.1",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.49",
+    "puppeteer-core": "^24.43.0",
     "tailwindcss": "^3.4.15",
     "tsx": "^4.19.2",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "undici": "^8.2.0"
   }
 }

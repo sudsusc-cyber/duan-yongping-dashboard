@@ -1,0 +1,80 @@
+name: Quarterly 13F Update
+
+# Weekly check for fresh H&H + peer 13F filings, regenerate deltas/overlap,
+# commit + push so the deployed site rebuilds with new data.
+#
+# Required GitHub secrets:
+#   SEC_USER_AGENT — must be a real "Project Name <real@email.com>" string;
+#                    SEC blocks placeholder UAs.
+#
+# Schedule: 02:00 UTC every Monday (= 10:00 Beijing). H&H typically files on
+# the 45-day deadline; weekly cadence catches new quarters within ~7 days.
+
+on:
+  schedule:
+    - cron: "0 2 * * 1"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Re-download all snapshots even if already on disk"
+        required: false
+        default: "false"
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: Fetch H&H 13F (CIK 0001759760)
+        env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+        run: |
+          if [ -z "$SEC_USER_AGENT" ]; then
+            echo "::error::SEC_USER_AGENT secret not configured"
+            exit 1
+          fi
+          npx tsx scripts/fetch-13f.ts --limit 6 \
+            ${{ inputs.force == 'true' && '--force' || '' }}
+
+      - name: Fetch peer 13Fs (Berkshire + Li Lu/Himalaya + Pabrai)
+        env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+        run: |
+          npx tsx scripts/fetch-13f.ts --cik 0001067983 --limit 1 \
+            --out-dir data/peers/berkshire \
+            ${{ inputs.force == 'true' && '--force' || '' }}
+          npx tsx scripts/fetch-13f.ts --cik 0001709323 --limit 1 \
+            --out-dir data/peers/lilu \
+            ${{ inputs.force == 'true' && '--force' || '' }}
+          npx tsx scripts/fetch-13f.ts --cik 0001549575 --limit 1 \
+            --out-dir data/peers/pabrai \
+            ${{ inputs.force == 'true' && '--force' || '' }}
+
+      - name: Recompute deltas (every adjacent pair on disk)
+        run: npx tsx scripts/compute-deltas.ts --all
+
+      - name: Recompute peer overlap
+        run: npx tsx scripts/compute-overlap.ts
+
+      - name: Commit if data changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/
+          if git diff --cached --quiet; then
+            echo "No data changes — skipping commit."
+          else
+            CHANGED=$(git diff --cached --name-only | wc -l | tr -d ' ')
+            git commit -m "chore(data): weekly 13F refresh (${CHANGED} files)"
+            git push
+          fi

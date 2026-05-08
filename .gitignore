@@ -27,3 +27,9 @@ Thumbs.db
 *.tsbuildinfo
 probe.html
 .dev.log
+
+# Visual audit screenshots (puppeteer-driven; diagnostic only)
+.audit/
+
+# Claude Code per-machine worktrees (the project-level launch.json IS tracked)
+.claude/worktrees/

@@ -1,0 +1,21 @@
+{
+  "marketLabel": "CN",
+  "marketLabelZh": "A股",
+  "disclaimer": "以下持仓不在 H&H 13F 申报范围内,整理自段永平在雪球及公开访谈中的发言。仓位规模为估算或未知,仅作参考标 (reference standard) — 可能不完整、滞后或已变化。所列项目均无第一手账户依据。",
+  "lastUpdated": "2026-04-30",
+  "currency": "CNY",
+  "holdings": [
+    {
+      "ticker": "600519",
+      "exchange": "SSE",
+      "secid": "1.600519",
+      "nameZh": "贵州茅台",
+      "nameEn": "Kweichow Moutai Co. Ltd.",
+      "estimated": true,
+      "estimatedSizeHint": "long-term core holding (具体股数从未公开)",
+      "sourceLabel": "雪球 · 多次表达",
+      "sourceUrl": "https://xueqiu.com/1247347556",
+      "notes": "段永平多次表示对茅台生意模式的认可,长期持有不卖。具体仓位从未公开披露。"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "ticker": "00700",
+  "nameZh": "腾讯控股",
+  "nameEn": "Tencent Holdings Ltd.",
+  "lastUpdated": "2026-04-30",
+  "note": "示例 / SEED DATA — 措辞为风格化复述,具体日期与原文请以雪球原帖为准后替换。",
+  "quotes": [
+    {
+      "date": "2018-XX-XX",
+      "source": "雪球 / 公开访谈",
+      "url": "https://xueqiu.com/1247347556",
+      "content": "腾讯是一家很好的公司,生意模式好,管理层也好。",
+      "tags": ["长期", "买公司"]
+    },
+    {
+      "date": "2022-XX-XX",
+      "source": "雪球 · 评论",
+      "url": "https://xueqiu.com/1247347556",
+      "content": "短期看起来好像出了点问题,但腾讯的核心没变。",
+      "tags": ["平常心", "本分"]
+    }
+  ]
+}

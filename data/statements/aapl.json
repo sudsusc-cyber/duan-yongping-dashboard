@@ -1,0 +1,37 @@
+{
+  "ticker": "AAPL",
+  "nameZh": "苹果公司",
+  "nameEn": "Apple Inc.",
+  "lastUpdated": "2026-04-30",
+  "note": "示例 / SEED DATA — 措辞为风格化复述,具体日期与原文请以雪球原帖为准后替换。",
+  "quotes": [
+    {
+      "date": "2018-05-11",
+      "source": "雪球 · 大道无形我有型",
+      "url": "https://xueqiu.com/1247347556",
+      "content": "我从来没在 80 美元以下卖过苹果。十年间偶尔会卖一些 covered call,其它时间就是坐着。",
+      "tags": ["长期", "卖call", "不卖"]
+    },
+    {
+      "date": "2020-04-22",
+      "source": "雪球 · 大道无形我有型",
+      "url": "https://xueqiu.com/1247347556",
+      "content": "最近卖了不少苹果的 put。简单的逻辑:if you'd buy at price X, just sell the put.",
+      "tags": ["卖put", "现金流"]
+    },
+    {
+      "date": "2022-09-03",
+      "source": "雪球 · 大道无形我有型",
+      "url": "https://xueqiu.com/1247347556",
+      "content": "市场短期是投票机,长期是称重机。苹果生意的本质没变。",
+      "tags": ["平常心", "不卖"]
+    },
+    {
+      "date": "2023-12-16",
+      "source": "雪球 · 大道无形我有型",
+      "url": "https://xueqiu.com/1247347556",
+      "content": "买苹果不是因为它便宜,而是因为它好。A great business at a fair price is far better than a fair business at a great price.",
+      "tags": ["本分", "买公司"]
+    }
+  ]
+}

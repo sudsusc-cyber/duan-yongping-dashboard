@@ -1,0 +1,16 @@
+{
+  "ticker": "09999",
+  "nameZh": "网易",
+  "nameEn": "NetEase Inc.",
+  "lastUpdated": "2026-04-30",
+  "note": "示例 / SEED DATA — 措辞为风格化复述,具体日期与原文请以雪球原帖为准后替换。",
+  "quotes": [
+    {
+      "date": "2010-XX-XX",
+      "source": "公开访谈",
+      "url": "https://xueqiu.com/1247347556",
+      "content": "网易是早期投的一个项目。丁磊是难得的好 CEO。",
+      "tags": ["长期", "买公司"]
+    }
+  ]
+}

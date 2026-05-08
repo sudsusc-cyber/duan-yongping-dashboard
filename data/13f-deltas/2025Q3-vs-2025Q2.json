@@ -1,0 +1,506 @@
+{
+  "currentTag": "2025Q3",
+  "previousTag": "2025Q2",
+  "filerCik": "0001759760",
+  "filerName": "H&H International Investment, LLC",
+  "current": {
+    "reportDate": "2025-09-30",
+    "filingDate": "2025-11-14",
+    "totalValue": 14678516884,
+    "positions": 11
+  },
+  "previous": {
+    "reportDate": "2025-06-30",
+    "filingDate": "2025-08-14",
+    "totalValue": 11533751094,
+    "positions": 10
+  },
+  "records": [
+    {
+      "ticker": "ASML",
+      "cusip": "N07059210",
+      "shareType": "SH",
+      "nameZh": "阿斯麦",
+      "nameEn": "ASML Holding N.V. (NY Registry)",
+      "current": {
+        "cusip": "N07059210",
+        "ticker": "ASML",
+        "exchange": "NASDAQ",
+        "nameOfIssuer": "ASML HOLDING N V",
+        "nameEn": "ASML Holding N.V. (NY Registry)",
+        "nameZh": "阿斯麦",
+        "titleOfClass": "N Y REGISTRY SHS",
+        "value": 77447200,
+        "shares": 80000,
+        "shareType": "SH",
+        "weight": 0.5276227878609429,
+        "unresolvedCusip": false
+      },
+      "previous": null,
+      "action": {
+        "kind": "NEW",
+        "deltaShares": 80000,
+        "deltaValue": 77447200,
+        "pctChange": 100
+      }
+    },
+    {
+      "ticker": "BRK.B",
+      "cusip": "084670702",
+      "shareType": "SH",
+      "nameZh": "伯克希尔 B",
+      "nameEn": "Berkshire Hathaway Inc. Class B",
+      "current": {
+        "cusip": "084670702",
+        "ticker": "BRK.B",
+        "exchange": "NYSE",
+        "nameOfIssuer": "BERKSHIRE HATHAWAY INC DEL",
+        "nameEn": "Berkshire Hathaway Inc. Class B",
+        "nameZh": "伯克希尔 B",
+        "classNote": "B",
+        "titleOfClass": "CL B NEW",
+        "value": 2609874162,
+        "shares": 5191300,
+        "shareType": "SH",
+        "weight": 17.780230677425163,
+        "unresolvedCusip": false
+      },
+      "previous": {
+        "cusip": "084670702",
+        "ticker": "BRK.B",
+        "exchange": "NYSE",
+        "nameOfIssuer": "BERKSHIRE HATHAWAY INC DEL",
+        "nameEn": "Berkshire Hathaway Inc. Class B",
+        "nameZh": "伯克希尔 B",
+        "classNote": "B",
+        "titleOfClass": "CL B NEW",
+        "value": 1642534101,
+        "shares": 3381300,
+        "shareType": "SH",
+        "weight": 14.241109311388438,
+        "unresolvedCusip": false
+      },
+      "action": {
+        "kind": "ADD",
+        "deltaShares": 1810000,
+        "deltaValue": 967340061,
+        "pctChange": 53.52970750894627
+      }
+    },
+    {
+      "ticker": "AAPL",
+      "cusip": "037833100",
+      "shareType": "SH",
+      "nameZh": "苹果公司",
+      "nameEn": "Apple Inc.",
+      "current": {
+        "cusip": "037833100",
+        "ticker": "AAPL",
+        "exchange": "NASDAQ",
+        "nameOfIssuer": "APPLE INC",
+        "nameEn": "Apple Inc.",
+        "nameZh": "苹果公司",
+        "titleOfClass": "COM",
+        "value": 8868535515,
+        "shares": 34829107,
+        "shareType": "SH",
+        "weight": 60.418471328441605,
+        "unresolvedCusip": false
+      },
+      "previous": {
+        "cusip": "037833100",
+        "ticker": "AAPL",
+        "exchange": "NASDAQ",
+        "nameOfIssuer": "APPLE INC",
+        "nameEn": "Apple Inc.",
+        "nameZh": "苹果公司",
+        "titleOfClass": "COM",
+        "value": 7205284598,
+        "shares": 35118607,
+        "shareType": "SH",
+        "weight": 62.471303041629525,
+        "unresolvedCusip": false
+      },
+      "action": {
+        "kind": "REDUCE",
+        "deltaShares": -289500,
+        "deltaValue": 1663250917,
+        "pctChange": -0.8243493257007602
+      }
+    },
+    {
+      "ticker": "PDD",
+      "cusip": "722304102",
+      "shareType": "SH",
+      "nameZh": "拼多多",
+      "nameEn": "PDD Holdings Inc. (Sponsored ADS)",
+      "current": {
+        "cusip": "722304102",
+        "ticker": "PDD",
+        "exchange": "NASDAQ",
+        "nameOfIssuer": "PDD HOLDINGS INC",
+        "nameEn": "PDD Holdings Inc. (Sponsored ADS)",
+        "nameZh": "拼多多",
+        "titleOfClass": "SPONSORED ADS",
+        "value": 1133251221,
+        "shares": 8574194,
+        "shareType": "SH",
+        "weight": 7.720474963211549,
+        "unresolvedCusip": false
+      },
+      "previous": {
+        "cusip": "722304102",
+        "ticker": "PDD",
+        "exchange": "NASDAQ",
+        "nameOfIssuer": "PDD HOLDINGS INC",
+        "nameEn": "PDD Holdings Inc. (Sponsored ADS)",
+        "nameZh": "拼多多",
+        "titleOfClass": "SPONSORED ADS",
+        "value": 906637554,
+        "shares": 8662694,
+        "shareType": "SH",
+        "weight": 7.86073452262763,
+        "unresolvedCusip": false
+      },
+      "action": {
+        "kind": "REDUCE",
+        "deltaShares": -88500,
+        "deltaValue": 226613667,
+        "pctChange": -1.0216221420264875
+      }
+    },
+    {
+      "ticker": "GOOG",
+      "cusip": "02079K107",
+      "shareType": "SH",
+      "nameZh": "谷歌 C",
+      "nameEn": "Alphabet Inc. Class C",
+      "current": {
+        "cusip": "02079K107",
+        "ticker": "GOOG",
+        "exchange": "NASDAQ",
+        "nameOfIssuer": "ALPHABET INC",
+        "nameEn": "Alphabet Inc. Class C",
+        "nameZh": "谷歌 C",
+        "classNote": "C",
+        "titleOfClass": "CAP STK CL C",
+        "value": 440947275,
+        "shares": 1810500,
+        "shareType": "SH",
+        "weight": 3.0040315277400067,
+        "unresolvedCusip": false
+      },
+      "previous": {
+        "cusip": "02079K107",
+        "ticker": "GOOG",
+        "exchange": "NASDAQ",
+        "nameOfIssuer": "ALPHABET INC",
+        "nameEn": "Alphabet Inc. Class C",
+        "nameZh": "谷歌 C",
+        "classNote": "C",
+        "titleOfClass": "CAP STK CL C",
+        "value": 345094506,
+        "shares": 1945400,
+        "shareType": "SH",
+        "weight": 2.992040518192927,
+        "unresolvedCusip": false
+      },
+      "action": {
+        "kind": "REDUCE",
+        "deltaShares": -134900,
+        "deltaValue": 95852769,
+        "pctChange": -6.934306569343065
+      }
+    },
+    {
+      "ticker": "BABA",
+      "cusip": "01609W102",
+      "shareType": "SH",
+      "nameZh": "阿里巴巴",
+      "nameEn": "Alibaba Group Holding Ltd. (ADR)",
+      "current": {
+        "cusip": "01609W102",
+        "ticker": "BABA",
+        "exchange": "NYSE",
+        "nameOfIssuer": "ALIBABA GROUP HLDG LTD",
+        "nameEn": "Alibaba Group Holding Ltd. (ADR)",
+        "nameZh": "阿里巴巴",
+        "titleOfClass": "SPONSORED ADS",
+        "value": 496392191,
+        "shares": 2777330,
+        "shareType": "SH",
+        "weight": 3.381759853007231,
+        "unresolvedCusip": false
+      },
+      "previous": {
+        "cusip": "01609W102",
+        "ticker": "BABA",
+        "exchange": "NYSE",
+        "nameOfIssuer": "ALIBABA GROUP HLDG LTD",
+        "nameEn": "Alibaba Group Holding Ltd. (ADR)",
+        "nameZh": "阿里巴巴",
+        "titleOfClass": "SPONSORED ADS",
+        "value": 424859944,
+        "shares": 3746230,
+        "shareType": "SH",
+        "weight": 3.6836233115956305,
+        "unresolvedCusip": false
+      },
+      "action": {
+        "kind": "REDUCE",
+        "deltaShares": -968900,
+        "deltaValue": 71532247,
+        "pctChange": -25.86333460572362
+      }
+    },
+    {
+      "ticker": "NVDA",
+      "cusip": "67066G104",
+      "shareType": "SH",
+      "nameZh": "英伟达",
+      "nameEn": "NVIDIA Corp.",
+      "current": {
+        "cusip": "67066G104",
+        "ticker": "NVDA",
+        "exchange": "NASDAQ",
+        "nameOfIssuer": "NVIDIA CORPORATION",
+        "nameEn": "NVIDIA Corp.",
+        "nameZh": "英伟达",
+        "titleOfClass": "COM",
+        "value": 111537524,
+        "shares": 597800,
+        "shareType": "SH",
+        "weight": 0.7598691671743694,
+        "unresolvedCusip": false
+      },
+      "previous": {
+        "cusip": "67066G104",
+        "ticker": "NVDA",
+        "exchange": "NASDAQ",
+        "nameOfIssuer": "NVIDIA CORPORATION",
+        "nameEn": "NVIDIA Corp.",
+        "nameZh": "英伟达",
+        "titleOfClass": "COM",
+        "value": 152428752,
+        "shares": 964800,
+        "shareType": "SH",
+        "weight": 1.321588707417965,
+        "unresolvedCusip": false
+      },
+      "action": {
+        "kind": "REDUCE",
+        "deltaShares": -367000,
+        "deltaValue": -40891228,
+        "pctChange": -38.03897180762853
+      }
+    },
+    {
+      "ticker": "OXY",
+      "cusip": "674599105",
+      "shareType": "SH",
+      "nameZh": "西方石油",
+      "nameEn": "Occidental Petroleum Corp.",
+      "current": {
+        "cusip": "674599105",
+        "ticker": "OXY",
+        "exchange": "NYSE",
+        "nameOfIssuer": "OCCIDENTAL PETE CORP",
+        "nameEn": "Occidental Petroleum Corp.",
+        "nameZh": "西方石油",
+        "titleOfClass": "COM",
+        "value": 640525725,
+        "shares": 13556100,
+        "shareType": "SH",
+        "weight": 4.363695120303273,
+        "unresolvedCusip": false
+      },
+      "previous": {
+        "cusip": "674599105",
+        "ticker": "OXY",
+        "exchange": "NYSE",
+        "nameOfIssuer": "OCCIDENTAL PETE CORP",
+        "nameEn": "Occidental Petroleum Corp.",
+        "nameZh": "西方石油",
+        "titleOfClass": "COM",
+        "value": 569491761,
+        "shares": 13556100,
+        "shareType": "SH",
+        "weight": 4.937610985000853,
+        "unresolvedCusip": false
+      },
+      "action": {
+        "kind": "HOLD",
+        "deltaShares": 0,
+        "deltaValue": 71033964,
+        "pctChange": 0
+      }
+    },
+    {
+      "ticker": "TSM",
+      "cusip": "874039100",
+      "shareType": "SH",
+      "nameZh": "台积电 ADR",
+      "nameEn": "Taiwan Semiconductor Mfg. (ADR)",
+      "current": {
+        "cusip": "874039100",
+        "ticker": "TSM",
+        "exchange": "NYSE",
+        "nameOfIssuer": "TAIWAN SEMICONDUCTOR MFG LTD",
+        "nameEn": "Taiwan Semiconductor Mfg. (ADR)",
+        "nameZh": "台积电 ADR",
+        "titleOfClass": "SPONSORED ADS",
+        "value": 72610931,
+        "shares": 259984,
+        "shareType": "SH",
+        "weight": 0.4946748474237746,
+        "unresolvedCusip": false
+      },
+      "previous": {
+        "cusip": "874039100",
+        "ticker": "TSM",
+        "exchange": "NYSE",
+        "nameOfIssuer": "TAIWAN SEMICONDUCTOR MFG LTD",
+        "nameEn": "Taiwan Semiconductor Mfg. (ADR)",
+        "nameZh": "台积电 ADR",
+        "titleOfClass": "SPONSORED ADS",
+        "value": 58883776,
+        "shares": 259984,
+        "shareType": "SH",
+        "weight": 0.5105344785065812,
+        "unresolvedCusip": false
+      },
+      "action": {
+        "kind": "HOLD",
+        "deltaShares": 0,
+        "deltaValue": 13727155,
+        "pctChange": 0
+      }
+    },
+    {
+      "ticker": "DIS",
+      "cusip": "254687106",
+      "shareType": "SH",
+      "nameZh": "迪士尼",
+      "nameEn": "Walt Disney Co.",
+      "current": {
+        "cusip": "254687106",
+        "ticker": "DIS",
+        "exchange": "NYSE",
+        "nameOfIssuer": "DISNEY WALT CO",
+        "nameEn": "Walt Disney Co.",
+        "nameZh": "迪士尼",
+        "titleOfClass": "COM",
+        "value": 82783500,
+        "shares": 723000,
+        "shareType": "SH",
+        "weight": 0.5639772781828958,
+        "unresolvedCusip": false
+      },
+      "previous": {
+        "cusip": "254687106",
+        "ticker": "DIS",
+        "exchange": "NYSE",
+        "nameOfIssuer": "DISNEY WALT CO",
+        "nameEn": "Walt Disney Co.",
+        "nameZh": "迪士尼",
+        "titleOfClass": "COM",
+        "value": 89659230,
+        "shares": 723000,
+        "shareType": "SH",
+        "weight": 0.7773640099329163,
+        "unresolvedCusip": false
+      },
+      "action": {
+        "kind": "HOLD",
+        "deltaShares": 0,
+        "deltaValue": -6875730,
+        "pctChange": 0
+      }
+    },
+    {
+      "ticker": "MSFT",
+      "cusip": "594918104",
+      "shareType": "SH",
+      "nameZh": "微软",
+      "nameEn": "Microsoft Corp.",
+      "current": {
+        "cusip": "594918104",
+        "ticker": "MSFT",
+        "exchange": "NASDAQ",
+        "nameOfIssuer": "MICROSOFT CORP",
+        "nameEn": "Microsoft Corp.",
+        "nameZh": "微软",
+        "titleOfClass": "COM",
+        "value": 144611640,
+        "shares": 279200,
+        "shareType": "SH",
+        "weight": 0.9851924492291916,
+        "unresolvedCusip": false
+      },
+      "previous": {
+        "cusip": "594918104",
+        "ticker": "MSFT",
+        "exchange": "NASDAQ",
+        "nameOfIssuer": "MICROSOFT CORP",
+        "nameEn": "Microsoft Corp.",
+        "nameZh": "微软",
+        "titleOfClass": "COM",
+        "value": 138876872,
+        "shares": 279200,
+        "shareType": "SH",
+        "weight": 1.2040911137075383,
+        "unresolvedCusip": false
+      },
+      "action": {
+        "kind": "HOLD",
+        "deltaShares": 0,
+        "deltaValue": 5734768,
+        "pctChange": 0
+      }
+    }
+  ],
+  "summary": {
+    "new": [
+      "ASML"
+    ],
+    "closed": [],
+    "addsTop3": [
+      {
+        "ticker": "BRK.B",
+        "deltaShares": 1810000,
+        "pctChange": 53.52970750894627,
+        "deltaValue": 967340061
+      }
+    ],
+    "reducesTop3": [
+      {
+        "ticker": "AAPL",
+        "deltaShares": -289500,
+        "pctChange": -0.8243493257007602,
+        "deltaValue": 1663250917
+      },
+      {
+        "ticker": "PDD",
+        "deltaShares": -88500,
+        "pctChange": -1.0216221420264875,
+        "deltaValue": 226613667
+      },
+      {
+        "ticker": "GOOG",
+        "deltaShares": -134900,
+        "pctChange": -6.934306569343065,
+        "deltaValue": 95852769
+      }
+    ],
+    "counts": {
+      "new": 1,
+      "closed": 0,
+      "add": 1,
+      "reduce": 5,
+      "hold": 4
+    },
+    "totalValueDelta": 3144765790,
+    "totalValuePct": 27.265767783353205
+  },
+  "generatedAt": "2026-04-30T14:58:37.764Z"
+}

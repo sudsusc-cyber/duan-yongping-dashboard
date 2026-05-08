@@ -1,0 +1,162 @@
+{
+  "generatedAt": "2026-05-08T15:51:57.001Z",
+  "source": "Yahoo Finance · 5Y monthly closes",
+  "tickerCount": 14,
+  "failures": [],
+  "tickers": {
+    "AAPL": {
+      "ticker": "AAPL",
+      "yahooSymbol": "AAPL",
+      "currentPrice": 292.705,
+      "fiveYearLow": 129.92999267578125,
+      "fiveYearHigh": 292.7051086425781,
+      "fiveYearMedian": 187.8699951171875,
+      "fiveYearPctile": 98.36065573770492,
+      "samples": 61,
+      "fetchedAt": "2026-05-08T15:51:51.602Z"
+    },
+    "BRK.B": {
+      "ticker": "BRK.B",
+      "yahooSymbol": "BRK-B",
+      "currentPrice": 477.03,
+      "fiveYearLow": 267.0199890136719,
+      "fiveYearHigh": 533.25,
+      "fiveYearMedian": 360.20001220703125,
+      "fiveYearPctile": 77.04918032786885,
+      "samples": 61,
+      "fetchedAt": "2026-05-08T15:51:51.969Z"
+    },
+    "NVDA": {
+      "ticker": "NVDA",
+      "yahooSymbol": "NVDA",
+      "currentPrice": 216.29,
+      "fiveYearLow": 12.138999938964844,
+      "fiveYearHigh": 216.29029846191406,
+      "fiveYearMedian": 49.52199935913086,
+      "fiveYearPctile": 98.36065573770492,
+      "samples": 61,
+      "fetchedAt": "2026-05-08T15:51:52.359Z"
+    },
+    "PDD": {
+      "ticker": "PDD",
+      "yahooSymbol": "PDD",
+      "currentPrice": 99.258,
+      "fiveYearLow": 40.11000061035156,
+      "fiveYearHigh": 149.77999877929688,
+      "fiveYearMedian": 99.25800323486328,
+      "fiveYearPctile": 49.18032786885246,
+      "samples": 61,
+      "fetchedAt": "2026-05-08T15:51:52.727Z"
+    },
+    "GOOG": {
+      "ticker": "GOOG",
+      "yahooSymbol": "GOOG",
+      "currentPrice": 395.805,
+      "fiveYearLow": 88.7300033569336,
+      "fiveYearHigh": 395.80499267578125,
+      "fiveYearMedian": 144.67950439453125,
+      "fiveYearPctile": 100,
+      "samples": 61,
+      "fetchedAt": "2026-05-08T15:51:53.106Z"
+    },
+    "OXY": {
+      "ticker": "OXY",
+      "yahooSymbol": "OXY",
+      "currentPrice": 53.88,
+      "fiveYearLow": 25.690000534057617,
+      "fiveYearHigh": 72.5999984741211,
+      "fiveYearMedian": 56.7400016784668,
+      "fiveYearPctile": 44.26229508196721,
+      "samples": 61,
+      "fetchedAt": "2026-05-08T15:51:53.516Z"
+    },
+    "MSFT": {
+      "ticker": "MSFT",
+      "yahooSymbol": "MSFT",
+      "currentPrice": 416.016,
+      "fiveYearLow": 232.1300048828125,
+      "fiveYearHigh": 533.5,
+      "fiveYearMedian": 375.3900146484375,
+      "fiveYearPctile": 70.49180327868852,
+      "samples": 61,
+      "fetchedAt": "2026-05-08T15:51:53.908Z"
+    },
+    "BABA": {
+      "ticker": "BABA",
+      "yahooSymbol": "BABA",
+      "currentPrice": 140.585,
+      "fiveYearLow": 63.58000183105469,
+      "fiveYearHigh": 226.77999877929688,
+      "fiveYearMedian": 102.18000030517578,
+      "fiveYearPctile": 78.68852459016394,
+      "samples": 61,
+      "fetchedAt": "2026-05-08T15:51:54.292Z"
+    },
+    "TSM": {
+      "ticker": "TSM",
+      "yahooSymbol": "TSM",
+      "currentPrice": 413.14,
+      "fiveYearLow": 61.54999923706055,
+      "fiveYearHigh": 414.1499938964844,
+      "fiveYearMedian": 120.30999755859375,
+      "fiveYearPctile": 96.72131147540983,
+      "samples": 61,
+      "fetchedAt": "2026-05-08T15:51:54.690Z"
+    },
+    "DIS": {
+      "ticker": "DIS",
+      "yahooSymbol": "DIS",
+      "currentPrice": 108.36,
+      "fiveYearLow": 81.05000305175781,
+      "fiveYearHigh": 181.3000030517578,
+      "fiveYearMedian": 108.36000061035156,
+      "fiveYearPctile": 49.18032786885246,
+      "samples": 61,
+      "fetchedAt": "2026-05-08T15:51:55.118Z"
+    },
+    "CRWV": {
+      "ticker": "CRWV",
+      "yahooSymbol": "CRWV",
+      "currentPrice": 111.27,
+      "fiveYearLow": 41.29999923706055,
+      "fiveYearHigh": 163.05999755859375,
+      "fiveYearMedian": 111.2699966430664,
+      "fiveYearPctile": 53.333333333333336,
+      "samples": 15,
+      "fetchedAt": "2026-05-08T15:51:55.497Z"
+    },
+    "CRDO": {
+      "ticker": "CRDO",
+      "yahooSymbol": "CRDO",
+      "currentPrice": 183.61,
+      "fiveYearLow": 8.109999656677246,
+      "fiveYearHigh": 188.2899932861328,
+      "fiveYearMedian": 21.540000915527344,
+      "fiveYearPctile": 94.33962264150944,
+      "samples": 53,
+      "fetchedAt": "2026-05-08T15:51:55.868Z"
+    },
+    "ASML": {
+      "ticker": "ASML",
+      "yahooSymbol": "ASML",
+      "currentPrice": 1547.47,
+      "fiveYearLow": 415.3500061035156,
+      "fiveYearHigh": 1547.469970703125,
+      "fiveYearMedian": 724.75,
+      "fiveYearPctile": 100,
+      "samples": 61,
+      "fetchedAt": "2026-05-08T15:51:56.360Z"
+    },
+    "TEM": {
+      "ticker": "TEM",
+      "yahooSymbol": "TEM",
+      "currentPrice": 48.32,
+      "fiveYearLow": 33.7599983215332,
+      "fiveYearHigh": 89.8499984741211,
+      "fiveYearMedian": 56.59000015258789,
+      "fiveYearPctile": 25,
+      "samples": 24,
+      "fetchedAt": "2026-05-08T15:51:56.748Z"
+    }
+  }
+}

@@ -1,132 +1,140 @@
-# Deployment · Cloudflare Pages
+# Deploy · 段永平实时持仓看板
 
-This site uses a **hybrid deployment**:
+A static Next.js export + one Cloudflare Pages Function for quotes. Once set up,
+every push triggers a build; every day at 03:00 UTC a bot fetches new 13F data
+and pushes it back, which triggers another build. **Zero manual intervention
+after first deploy.**
 
-- The dashboard itself is a fully static export (`output: 'export'` → `out/`).
-  Every page, every JSON of 13F / delta / manual / statements / overlap data
-  is bundled at build time and served from Cloudflare's edge CDN.
-- The single dynamic endpoint, **`/api/quotes`**, is a Cloudflare Pages
-  Function at [`functions/api/quotes.ts`](functions/api/quotes.ts). Cloudflare
-  picks up this directory automatically and compiles it to a Worker; client
-  requests hit the same `/api/quotes` URL and never know the difference.
+---
 
-There is no Vercel, no `next-on-pages` adapter, no Node runtime in
-production. Everything ships to Cloudflare's edge.
+## Architecture
 
-## Dev / build / prod three-track summary
-
-| Track          | Quotes via                               | Eastmoney source IP    |
+| Track          | Quotes via                               | Runtime                |
 |----------------|------------------------------------------|------------------------|
-| `next dev`     | `src/app/api/quotes/route.ts` (Node)     | Your dev machine       |
-| `npm run build`| route handler returns 404 placeholder    | n/a (build-time only)  |
+| `next dev`     | `src/app/api/quotes/route.ts` (Node)     | Local dev server       |
+| `npm run build`| Route handler self-degrades to 404       | Build only             |
 | Production     | `functions/api/quotes.ts` (CF Worker)    | Cloudflare PoP outbound|
 
-The route handler self-degrades when `STATIC_EXPORT=1` is set (by
-`scripts/build-static.mjs`), so the file lives happily in the source tree
-without breaking `output: 'export'`.
+All quote endpoints proxy to **Tencent `qt.gtimg.cn`** (no API key required;
+supports US/HK/CN markets). Previously used Eastmoney `push2`, which started
+blocking many non-CN client IPs in 2026 — see commit history.
 
-## One-time setup
+---
 
-1. **Push the repo to GitHub.** Phase 4 commits aren't on remote yet; the
-   first push primes Cloudflare to build.
+## Step 1 — Push the repo
 
-2. **Create a Cloudflare Pages project.**
-   - Cloudflare dashboard → Workers & Pages → Create → Pages → Connect to Git
-   - Pick this repo
+```bash
+git status                       # confirm clean (or stage what you want)
+git add .
+git commit -m "feat: ready to deploy"
+git remote -v                    # set GitHub remote if missing
+git push -u origin main
+```
+
+If you don't have a GitHub repo yet:
+
+```bash
+gh repo create duan-yongping-dashboard --public --source=. --remote=origin --push
+```
+
+## Step 2 — Add `SEC_USER_AGENT` GitHub secret
+
+SEC EDGAR **blocks placeholder User-Agent strings** — the data-refresh bot
+needs a real contact email so SEC can throttle / reach you on abuse.
+
+1. Repo → **Settings → Secrets and variables → Actions → New repository secret**
+2. **Name**: `SEC_USER_AGENT`
+3. **Value**: `Duan Yongping Dashboard <your-real-email@example.com>`
+4. Save.
+
+(The `.env.local` placeholder is for local script runs; GitHub Actions reads
+this secret, not the file.)
+
+## Step 3 — Connect Cloudflare Pages
+
+1. Cloudflare Dashboard → **Workers & Pages → Create → Pages → Connect to Git**
+2. Pick this repo, **production branch: `main`**
+3. Build settings:
    - **Build command**: `npm run build`
    - **Build output directory**: `out`
    - **Node version**: 20
-   - Environment variables: none required at runtime (the SEC_USER_AGENT is
-     only used by GitHub Actions to refresh data, not at edge)
+4. Environment variables: **none required at runtime**
+5. **Save and deploy**
 
-3. **Add GitHub Actions secret.**
-   - Repo → Settings → Secrets and variables → Actions → New secret
-   - Name: `SEC_USER_AGENT`
-   - Value: `Your Name <real-email@domain.com>` — SEC blocks placeholder UAs
-   - Used by [`.github/workflows/13f-quarterly-update.yml`](.github/workflows/13f-quarterly-update.yml)
-     to fetch fresh 13F data weekly. The workflow commits to `data/` which
-     triggers Cloudflare Pages to rebuild.
+First build takes ~2 min. Subsequent builds (triggered by data refresh
+commits) are ~1 min.
 
-4. **(Optional) Configure custom domain** in Cloudflare Pages → Custom domains.
+## Step 4 — Smoke-test the deploy
 
-## Local verification before pushing
+Replace with your actual `pages.dev` URL or custom domain:
 
 ```bash
-# Static build — produces out/ directory
-npm run build
-
-# Smoke test the static bundle (lightweight HTTP server)
-npx serve out
-
-# Visit http://localhost:3000 — everything should render except real-time
-# quote prices (since /api/quotes is a Pages Function, not in the static bundle).
-# Quote prices light up only after Cloudflare deploy.
+curl -sf "https://your-project.pages.dev/" | head -50          # static HTML
+curl -sf "https://your-project.pages.dev/api/quotes?secids=105.AAPL" | jq .
 ```
 
-## Smoke test after first deploy
+**Expected**:
+```json
+{
+  "quotes": {
+    "105.AAPL": { "price": 301.5, "changePct": 0.71, ... }
+  },
+  "count": 1, "requested": 1, "missing": []
+}
+```
 
-The unknown is whether **`push2.eastmoney.com` accepts requests from
-Cloudflare Workers IPs**. Workers run from Cloudflare's global PoPs, which
-are not Chinese home IPs — Eastmoney may rate-limit or block them.
+If `count: 0` and `missing: ["105.AAPL"]` — Cloudflare PoP can't reach Tencent.
+Workarounds in `functions/api/quotes.ts` header comment.
 
-After first deploy:
+## Step 5 — Watch the first auto-refresh
+
+The daily refresh job runs **every day at 03:00 UTC (11:00 Beijing)**:
+
+- Pulls H&H + Berkshire / Li Lu / Pabrai 13F filings from SEC EDGAR
+- Resolves any unknown CUSIPs via OpenFIGI (no API key, cached)
+- Recomputes deltas + peer overlap
+- Auto-commits to `data/` if anything changed → triggers a Pages rebuild
+
+Manually trigger anytime: Repo → **Actions → Daily 13F Update → Run workflow**.
+
+---
+
+## Auto-discovery (what's automated)
+
+| Trigger                     | Schedule      | Effect                                                   |
+|-----------------------------|---------------|----------------------------------------------------------|
+| Realtime quotes             | 1 Hz client   | Client → CF Worker → Tencent. Flashes on tick.           |
+| 13F refresh                 | Daily 03:00 UTC | New filings land in `data/13f-history/<quarter>.json`  |
+| Unknown CUSIP resolution    | Inside 13F job | OpenFIGI lookup, cached in `data/cusip-resolved.json`  |
+| 5Y price percentile         | Daily 22:00 UTC | Yahoo Finance bars → `data/fundamentals/snapshot.json` |
+| Page rebuild                | On every commit | `src/app/page.tsx` auto-picks newest quarter on disk   |
+
+**You touch the code only if you want to redesign.** New H&H positions →
+automatically picked up, tickered, quoted, displayed.
+
+## What is still manual
+
+`data/manual/hk-holdings.json` and `data/manual/cn-holdings.json` — segment
+permanent because H&H's 13F doesn't include HK or A-share holdings (those
+are in a Hong Kong vehicle, not SEC-disclosed). Edit by hand when 段永平
+publicly references a new HK/CN position on Xueqiu.
+
+## Local dev
 
 ```bash
-# Replace with your actual deployed origin
-curl -sf "https://your-project.pages.dev/api/quotes?secids=105.AAPL,116.00700" | jq .
+npm install
+npm run dev          # http://localhost:3000
+
+# Refresh data locally:
+SEC_USER_AGENT="Your Name <real@email.com>" npm run fetch:13f
+npm run compute:deltas
 ```
 
-**Pass case** — `count: 2`, both secids in `quotes`:
-```json
-{ "quotes": { "105.AAPL": { "price": 287.5, ... }, "116.00700": { "price": 412.6, ... } }, "count": 2, "missing": [] }
+## Production smoke test before pushing
+
+```bash
+npm run build                 # produces out/
+npx serve out -l 3100         # serves at http://localhost:3100
+# Quotes show "—" locally (api/quotes is a CF Function not in static bundle).
+# That's expected. Quotes light up only on the live Cloudflare URL.
 ```
-
-**Fail case** — `count: 0`, both in `missing`:
-```json
-{ "quotes": {}, "count": 0, "missing": ["105.AAPL", "116.00700"] }
-```
-
-If it fails, three fallback strategies (in order of effort):
-
-1. **Move polling client-side via JSONP.** Eastmoney `push2` supports
-   `?cb=callbackName`. Drop the Pages Function entirely; client browsers
-   make CORS-free JSONP fetches directly. Loses server-side dedup but
-   eastmoney sees real user IPs (Chinese home IPs from Chinese users).
-2. **Proxy through a CN-reachable edge** (Tencent EdgeOne, Aliyun ESA,
-   etc.) and rewrite `/api/quotes` to that proxy.
-3. **Switch to a paid Western market data API** (Tiingo / EOD / Polygon).
-   Lowest friction long term but loses HK/A-share coverage.
-
-## Repo layout reference
-
-```
-.
-├── data/                          ← static at build time, refreshed by Action
-│   ├── 13f-history/<quarter>.json
-│   ├── 13f-deltas/<pair>.json
-│   ├── manual/{hk,cn}-holdings.json
-│   ├── statements/{ticker}.json
-│   └── peers/{berkshire,pabrai}/<quarter>.json + overlap.json
-├── functions/api/
-│   └── quotes.ts                  ← Cloudflare Pages Function
-├── out/                           ← built by `npm run build`, deployed verbatim
-├── scripts/                       ← only run in GitHub Actions / local dev
-└── src/                           ← Next.js app source
-```
-
-## When data lands
-
-- **GitHub Actions** runs every Monday 02:00 UTC = 10:00 Beijing.
-- It reads CIK 0001759760 (H&H), CIK 0001067983 (Berkshire), CIK 0001549575
-  (Dalal Street / Pabrai) from SEC EDGAR.
-- If a new 13F filing exists, it lands in `data/13f-history/<new-quarter>.json`,
-  deltas + overlap regenerate, and the bot commits.
-- Cloudflare Pages picks up the commit, rebuilds, deploys — usually <2 min.
-
-## What is NOT deployed
-
-- `scripts/` — server-side data tooling, only runs in CI / local
-- `scripts/_audit-shots.ts` + `puppeteer-core` devDep — local visual audit
-- `data/peers/<filer>/<quarter>.json` files for filings older than the
-  latest are skipped by `--limit 1`; old peer snapshots stay if already on disk
-- `.audit/` — git-ignored screenshots

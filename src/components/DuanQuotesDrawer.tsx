@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import { BanXin } from "./atoms";
 import type { StatementsFile, XueqiuQuote } from "@/lib/types";
 
 interface Props {
@@ -47,7 +46,7 @@ export default function DuanQuotesDrawer({ ticker, statements, onClose }: Props)
         className={`drawer ${isOpen ? "is-open" : ""}`}
         role="dialog"
         aria-modal="true"
-        aria-label="段永平雪球札记"
+        aria-label="Xueqiu notes"
       >
         {ticker && (
           <DrawerInner ticker={ticker} statements={statements} onClose={onClose} />
@@ -73,24 +72,18 @@ function DrawerInner({
 
   return (
     <div className="drawer-inner">
-      {/* ── Header ─────────────────────────────────── */}
       <header className="drawer-head">
         <div className="flex items-baseline justify-between">
-          <div className="flex items-baseline gap-3">
-            <span className="h-sc" style={{ fontSize: 11, color: "var(--gold)" }}>
-              DUAN · 札记
-            </span>
-            <span
-              className="brush"
-              style={{
-                fontSize: 13,
-                color: "var(--ink-3)",
-                letterSpacing: "0.42em",
-              }}
-            >
-              段 · 公 · 曰
-            </span>
-          </div>
+          <span
+            style={{
+              fontSize: 12,
+              color: "var(--ink-3)",
+              letterSpacing: "0.08em",
+              fontWeight: 500,
+            }}
+          >
+            雪球札记 / XUEQIU NOTES
+          </span>
           <button
             type="button"
             onClick={onClose}
@@ -101,15 +94,19 @@ function DrawerInner({
           </button>
         </div>
 
-        <div className="mt-5 flex items-baseline gap-4 flex-wrap">
-          <span className="h-display" style={{ fontSize: 38, color: "var(--ink-1)" }}>
+        <div className="mt-4 flex items-baseline gap-3 flex-wrap">
+          <span
+            style={{
+              fontFamily: "var(--mono)",
+              fontSize: 24,
+              color: "var(--ink-1)",
+              fontWeight: 500,
+            }}
+          >
             {ticker}
           </span>
           {statements?.nameZh && (
-            <span
-              className="h-cn"
-              style={{ fontSize: 18, color: "var(--ink-2)", letterSpacing: "0.10em" }}
-            >
+            <span style={{ fontSize: 15, color: "var(--ink-2)" }}>
               {statements.nameZh}
             </span>
           )}
@@ -118,17 +115,21 @@ function DrawerInner({
           )}
         </div>
 
-        <div className="mt-3 flex items-center gap-4 h-mono tnum" style={{ fontSize: 10, color: "var(--ink-4)" }}>
+        <div
+          className="mt-3 flex items-center gap-3 h-mono tnum"
+          style={{ fontSize: 10, color: "var(--ink-4)" }}
+        >
           <span>{quotes.length} entries</span>
           {statements?.lastUpdated && <span>updated {statements.lastUpdated}</span>}
           {seedFlag && (
             <span
               style={{
-                color: "var(--gold-light)",
-                border: "1px dashed var(--gold-deep)",
-                padding: "1px 8px",
-                letterSpacing: "0.20em",
+                color: "var(--accent-bright)",
+                border: "1px solid var(--line-rule)",
+                padding: "1px 7px",
+                letterSpacing: "0.08em",
                 fontSize: 9,
+                borderRadius: 3,
               }}
             >
               SEED · 示例
@@ -137,7 +138,6 @@ function DrawerInner({
         </div>
       </header>
 
-      {/* ── Body ───────────────────────────────────── */}
       <div className="drawer-body">
         {quotes.length === 0 ? (
           <EmptyState ticker={ticker} />
@@ -146,7 +146,6 @@ function DrawerInner({
         )}
       </div>
 
-      {/* ── Footer ─────────────────────────────────── */}
       <footer className="drawer-foot">
         <span className="h-mono tnum" style={{ fontSize: 10, color: "var(--ink-4)" }}>
           ESC · 关闭
@@ -156,9 +155,9 @@ function DrawerInner({
           target="_blank"
           rel="noopener noreferrer"
           className="gold-link h-mono"
-          style={{ fontSize: 10, letterSpacing: "0.10em" }}
+          style={{ fontSize: 10, letterSpacing: "0.06em" }}
         >
-          访问雪球 · 大道无形我有型 →
+          访问雪球 →
         </a>
       </footer>
     </div>
@@ -167,25 +166,29 @@ function DrawerInner({
 
 function QuoteCard({ q }: { q: XueqiuQuote }) {
   return (
-    <BanXin style={{ padding: "20px 22px", marginBottom: 14 }}>
+    <div
+      style={{
+        padding: "16px 18px",
+        marginBottom: 12,
+        border: "1px solid var(--line-rule)",
+        borderRadius: 6,
+        background: "var(--bg-paper)",
+      }}
+    >
       <div className="flex items-baseline justify-between mb-3">
-        <span className="h-mono tnum" style={{ fontSize: 11, color: "var(--gold-light)" }}>
+        <span className="h-mono tnum" style={{ fontSize: 11, color: "var(--accent-bright)" }}>
           {q.date}
         </span>
-        <span
-          className="h-cn"
-          style={{ fontSize: 11, color: "var(--ink-3)", letterSpacing: "0.08em" }}
-        >
+        <span style={{ fontSize: 11, color: "var(--ink-3)", letterSpacing: "0.04em" }}>
           {q.source}
         </span>
       </div>
       <p
-        className="pull-quote h-cn"
         style={{
-          fontSize: 16,
-          lineHeight: 1.85,
+          fontSize: 14,
+          lineHeight: 1.75,
           color: "var(--ink-1)",
-          fontStyle: "normal",
+          margin: 0,
         }}
       >
         {q.content}
@@ -195,13 +198,13 @@ function QuoteCard({ q }: { q: XueqiuQuote }) {
           {q.tags.map((t) => (
             <span
               key={t}
-              className="h-cn"
               style={{
                 fontSize: 10,
-                letterSpacing: "0.20em",
+                letterSpacing: "0.04em",
                 color: "var(--ink-3)",
                 border: "1px solid var(--line-rule)",
                 padding: "2px 8px",
+                borderRadius: 3,
               }}
             >
               {t}
@@ -214,13 +217,13 @@ function QuoteCard({ q }: { q: XueqiuQuote }) {
             target="_blank"
             rel="noopener noreferrer"
             className="gold-link h-mono"
-            style={{ fontSize: 10, letterSpacing: "0.08em" }}
+            style={{ fontSize: 10, letterSpacing: "0.04em" }}
           >
             原帖 →
           </a>
         )}
       </div>
-    </BanXin>
+    </div>
   );
 }
 
@@ -230,20 +233,20 @@ function EmptyState({ ticker }: { ticker: string }) {
       className="flex flex-col items-center justify-center text-center"
       style={{ padding: "60px 24px", color: "var(--ink-3)" }}
     >
-      <div
-        className="h-display-it"
-        style={{ fontSize: 32, color: "var(--ink-3)", marginBottom: 12 }}
-      >
-        ø
-      </div>
-      <div className="h-sc" style={{ fontSize: 11, color: "var(--ink-3)" }}>
-        NO ARCHIVAL ENTRIES
-      </div>
+      <div style={{ fontSize: 28, color: "var(--ink-4)", marginBottom: 12 }}>ø</div>
+      <div className="lbl-sm">NO ARCHIVAL ENTRIES</div>
       <p
-        className="h-cn mt-3"
-        style={{ fontSize: 13, lineHeight: 1.85, color: "var(--ink-3)", maxWidth: 360 }}
+        style={{
+          fontSize: 13,
+          lineHeight: 1.75,
+          color: "var(--ink-3)",
+          maxWidth: 360,
+          marginTop: 12,
+        }}
       >
-        段公在公开来源尚未对 <span style={{ color: "var(--ink-2)" }}>{ticker}</span> 留下记录,或正在整理中。
+        段先生在公开来源尚未对{" "}
+        <span style={{ color: "var(--ink-2)" }}>{ticker}</span>{" "}
+        留下记录，或正在整理中。
       </p>
     </div>
   );

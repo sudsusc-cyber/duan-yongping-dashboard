@@ -1,32 +1,20 @@
 /**
  * Cloudflare Pages Function · GET /api/quotes?secids=105.AAPL,116.00700,...
  *
- * Replaces src/app/api/quotes/route.ts (deleted to allow `output: 'export'`).
- * This file is compiled to a Worker by Cloudflare Pages — it does NOT share
- * imports with the Next.js src/ tree, so the eastmoney logic is inlined.
+ * Mirrors src/lib/eastmoney.ts (v3 — Tencent qt.gtimg.cn). Eastmoney's push2
+ * endpoint started returning empty data in 2026 and was eventually blocked at
+ * TLS for many client IPs (CF Worker source IPs included). Tencent qt.gtimg.cn
+ * is the new primary source: no key, supports US/HK/CN tickers, response is
+ * ASCII numeric fields delimited by `~` (Chinese-name field is gb18030 but we
+ * never decode it).
  *
- * Caching strategy:
- *  - Server-side per-secid Map cache + in-flight dedup (the original
- *    src/lib/eastmoney.ts approach) does NOT survive across Worker
- *    invocations. Different PoPs / different cold starts each get fresh state.
- *  - Instead we set `Cache-Control: s-maxage=2, public` on the response,
- *    which lets Cloudflare's edge cache absorb the 1Hz polling at the PoP
- *    layer. Same effective behaviour from the user's perspective.
- *  - Eastmoney itself is hit once per ~2s per PoP per secid combination.
- *
- * Caveat tested at deploy time: push2.eastmoney.com may rate-limit or block
- * Cloudflare-Workers source IPs (which differ from CN home IPs the dev
- * server uses). If smoke test reveals upstream 403/429, fallbacks are:
- *   1. Move polling client-side via JSONP (eastmoney supports `cb=callback`)
- *   2. Proxy through a CN-resident edge (cn.gcorelabs etc.)
- *   3. Switch to a paid market data API (Tiingo / EOD)
+ * secid → Tencent query token:
+ *   105.AAPL    → usAAPL
+ *   106.BRK_B   → usBRK.B
+ *   116.00700   → hk00700
+ *   1.600519    → sh600519
+ *   0.000333    → sz000333
  */
-
-interface RawData {
-  f43?: number; f44?: number; f45?: number; f46?: number; f60?: number;
-  f86?: number; f116?: number; f152?: number;
-  f164?: number; f167?: number; f169?: number; f170?: number;
-}
 
 interface Quote {
   secid: string;
@@ -40,73 +28,77 @@ interface Quote {
   changeAbs: number;
   changePct: number;
   pe?: number;
-  pb?: number;
-  marketCap?: number;
-  timestamp?: number;
   fetchedAt: string;
 }
 
-const BASE = "https://push2.eastmoney.com/api/qt";
-const FIELDS = "f43,f44,f45,f46,f60,f86,f116,f152,f164,f167,f169,f170";
+const MAX_BATCH = 50;
 const HEADERS: HeadersInit = {
   "User-Agent": "Mozilla/5.0 (compatible; DuanDashboard/0.1)",
-  Referer: "https://quote.eastmoney.com/",
-  Accept: "application/json, text/plain, */*",
+  Referer: "https://finance.qq.com/",
+  Accept: "*/*",
 };
-const MAX_BATCH = 50;
 
-/** Per-market price storage divisor (US/HK store at 4 decimals, CN at 2). */
-function priceDivisor(exchange: number): number {
-  if (exchange === 0 || exchange === 1) return 100; // CN: SZSE / SSE
-  return 1000;                                       // US, HK, etc.
+function secidToTencent(secid: string): string | null {
+  const dot = secid.indexOf(".");
+  if (dot < 0) return null;
+  const exStr = secid.slice(0, dot);
+  const ticker = secid.slice(dot + 1).replace(/_/g, ".");
+  if (!ticker) return null;
+  switch (Number(exStr)) {
+    case 105: case 106: return `us${ticker}`;
+    case 116: return `hk${ticker}`;
+    case 1:   return `sh${ticker}`;
+    case 0:   return `sz${ticker}`;
+    default:  return null;
+  }
 }
 
-function rawNum(v: unknown): number | undefined {
-  if (v === undefined || v === null || v === "-" || v === "") return undefined;
+function numOrUndef(v: string | undefined): number | undefined {
+  if (v === undefined || v === "") return undefined;
   const n = Number(v);
   return Number.isFinite(n) ? n : undefined;
 }
 
 async function fetchOne(secid: string): Promise<Quote | null> {
-  const [exStr, ticker] = secid.split(".");
-  if (!exStr || !ticker) return null;
-  const exchange = Number(exStr);
+  const dot = secid.indexOf(".");
+  if (dot < 0) return null;
+  const exchange = Number(secid.slice(0, dot));
+  const ticker = secid.slice(dot + 1);
   if (!Number.isFinite(exchange)) return null;
 
-  // Drop the cache buster — at edge, identical URLs let the runtime/CDN
-  // collapse concurrent requests for the same secid.
-  const url = `${BASE}/stock/get?secid=${encodeURIComponent(secid)}&fields=${FIELDS}`;
+  const tq = secidToTencent(secid);
+  if (!tq) return null;
 
+  const url = `https://qt.gtimg.cn/q=${tq}`;
   const res = await fetch(url, {
     headers: HEADERS,
     cf: { cacheTtl: 2, cacheEverything: true },
     signal: AbortSignal.timeout(5_000),
   } as RequestInit & { cf?: Record<string, unknown> });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const text = await res.text();
 
-  const json = (await res.json()) as { rc?: number; data?: RawData | null };
-  if (json.rc !== 0 || !json.data) return null;
+  if (text.includes("v_pv_none_match")) return null;
+  const m = text.match(/="([^"]+)"/);
+  if (!m) return null;
+  const parts = m[1].split("~");
+  if (parts.length < 34) return null;
 
-  const d = json.data;
-  const div = priceDivisor(exchange);
-  const price = rawNum(d.f43);
-  if (price === undefined) return null;
+  const price = numOrUndef(parts[3]);
+  if (price === undefined || price === 0) return null;
 
   return {
     secid,
     ticker,
     exchange,
-    price: price / div,
-    prevClose: (rawNum(d.f60) ?? 0) / div,
-    open:  d.f46 != null ? rawNum(d.f46)! / div : undefined,
-    high:  d.f44 != null ? rawNum(d.f44)! / div : undefined,
-    low:   d.f45 != null ? rawNum(d.f45)! / div : undefined,
-    changeAbs: (rawNum(d.f169) ?? 0) / div,
-    changePct: (rawNum(d.f170) ?? 0) / 100,
-    pe:    d.f164 != null ? rawNum(d.f164)! / 100 : undefined,
-    pb:    d.f167 != null ? rawNum(d.f167)! / 100 : undefined,
-    marketCap: rawNum(d.f116),
-    timestamp: rawNum(d.f86),
+    price,
+    prevClose: numOrUndef(parts[4]) ?? 0,
+    open: numOrUndef(parts[5]),
+    high: numOrUndef(parts[33]),
+    low: numOrUndef(parts[34]),
+    changeAbs: numOrUndef(parts[31]) ?? 0,
+    changePct: numOrUndef(parts[32]) ?? 0,
+    pe: numOrUndef(parts[39]),
     fetchedAt: new Date().toISOString(),
   };
 }
@@ -116,7 +108,6 @@ function jsonResponse(body: unknown, init: ResponseInit = {}): Response {
     ...init,
     headers: {
       "content-type": "application/json; charset=utf-8",
-      // PoP edge cache for 2s — covers 1Hz polling bursts.
       "cache-control": "public, s-maxage=2, max-age=0",
       ...(init.headers as Record<string, string> | undefined),
     },

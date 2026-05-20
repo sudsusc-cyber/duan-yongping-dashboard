@@ -96,18 +96,24 @@ async function main() {
   await page.goto(TARGET, { waitUntil: "domcontentloaded", timeout: 30_000 });
   // Wait until at least one HoldingsTable Last cell has a numeric value
   // (i.e. /api/quotes has returned and React has setQuotes). The 1Hz hook
-  // can take several seconds on a cold dev server.
-  await page.waitForFunction(
-    () => {
-      const cells = document.querySelectorAll(
-        "table.book-table tbody tr.row td.num-cell",
-      );
-      return Array.from(cells).some((c) =>
-        /^\d/.test((c.textContent || "").trim()),
-      );
-    },
-    { timeout: 20_000, polling: 250 },
-  );
+  // can take several seconds on a cold dev server. Tolerate timeout —
+  // if the mock interception didn't fire, capture the empty state anyway
+  // rather than failing the whole audit.
+  try {
+    await page.waitForFunction(
+      () => {
+        const cells = document.querySelectorAll(
+          "table.book-table tbody tr.row td.num-cell",
+        );
+        return Array.from(cells).some((c) =>
+          /^\d/.test((c.textContent || "").trim()),
+        );
+      },
+      { timeout: 8_000, polling: 250 },
+    );
+  } catch {
+    console.warn("[audit] quote-ready wait timed out; capturing anyway");
+  }
   // Belt-and-suspenders so portfolio Δ memo recomputes.
   await new Promise((r) => setTimeout(r, 800));
 

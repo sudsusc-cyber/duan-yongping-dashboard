@@ -14,60 +14,28 @@ interface Props {
 
 export default function MarketTabs({ market, onChange, usCount, hkCount, cnCount }: Props) {
   return (
-    <section className="max-w-[1480px] mx-auto px-10 mb-8">
+    <section className="max-w-[1280px] mx-auto px-8 mb-4">
       <div className="tab-bar">
         <Tab active={market === "US"} onClick={() => onChange("US")}>
-          <span
-            className="h-cn"
-            style={{ fontFamily: "var(--serif-cn)", letterSpacing: "0.42em", fontSize: 13 }}
-          >
-            美 · 股
-          </span>
-          <span
-            className="h-mono"
-            style={{ fontSize: 9, letterSpacing: "0.05em", color: "var(--ink-3)" }}
-          >
-            US · 13F-HR · {usCount} positions
-          </span>
+          <span>US</span>
+          <span style={{ color: "var(--ink-4)", fontSize: 11 }}>美股 · {usCount}</span>
         </Tab>
 
         <Tab active={market === "HK"} onClick={() => onChange("HK")}>
-          <span
-            className="h-cn"
-            style={{ fontFamily: "var(--serif-cn)", letterSpacing: "0.42em", fontSize: 13 }}
-          >
-            港 · 股
-          </span>
-          <span
-            className="h-mono"
-            style={{ fontSize: 9, letterSpacing: "0.05em", color: "var(--ink-4)" }}
-          >
-            HK · {hkCount}
-          </span>
-          <span className="est">参考标 · 公开访谈</span>
+          <span>HK</span>
+          <span style={{ color: "var(--ink-4)", fontSize: 11 }}>港股 · {hkCount}</span>
         </Tab>
 
         <Tab active={market === "CN"} onClick={() => onChange("CN")}>
-          <span
-            className="h-cn"
-            style={{ fontFamily: "var(--serif-cn)", letterSpacing: "0.42em", fontSize: 13 }}
-          >
-            A · 股
-          </span>
-          <span
-            className="h-mono"
-            style={{ fontSize: 9, letterSpacing: "0.05em", color: "var(--ink-4)" }}
-          >
-            CN · {cnCount}
-          </span>
-          <span className="est">参考标 · 公开访谈</span>
+          <span>A股</span>
+          <span style={{ color: "var(--ink-4)", fontSize: 11 }}>CN · {cnCount}</span>
         </Tab>
 
         <div
           className="ml-auto h-mono flex items-center"
-          style={{ fontSize: 10, color: "var(--ink-4)", padding: "14px 0" }}
+          style={{ fontSize: 10, color: "var(--ink-4)", padding: "14px 0", letterSpacing: "0.04em" }}
         >
-          sort: weight ↓
+          sorted by weight ↓
         </div>
       </div>
     </section>

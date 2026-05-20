@@ -40,29 +40,22 @@ export default function ManualHoldingsList({
   const sym = priceSymbol(currency);
 
   return (
-    <section className="max-w-[1480px] mx-auto px-10 mb-20 grid grid-cols-12 gap-10">
+    <section className="max-w-[1280px] mx-auto px-8 mb-16 grid grid-cols-12 gap-8">
       <BanXin
         as="aside"
         className="col-span-4 self-start"
-        style={{
-          padding: "22px 24px",
-          background:
-            "linear-gradient(180deg, rgba(192,57,43,0.04), transparent 70%)",
-        }}
+        style={{ padding: "18px 20px" }}
       >
         <div className="lbl mb-3" style={{ color: "var(--rise)" }}>
-          ⚠ 参考标 · REFERENCE STANDARD
+          ⚠ 参考标 / REFERENCE
         </div>
         <div
-          className="h-cn mb-3"
-          style={{ fontSize: 13, color: "var(--ink-1)", letterSpacing: "0.3em" }}
+          className="mb-3"
+          style={{ fontSize: 14, color: "var(--ink-1)", fontWeight: 500 }}
         >
           {marketLabelZh}
         </div>
-        <p
-          className="h-cn"
-          style={{ fontSize: 13, lineHeight: 1.85, color: "var(--ink-2)" }}
-        >
+        <p style={{ fontSize: 13, lineHeight: 1.7, color: "var(--ink-2)", margin: 0 }}>
           {disclaimer}
         </p>
       </BanXin>
@@ -73,19 +66,26 @@ export default function ManualHoldingsList({
           return (
             <BanXin
               key={h.secid}
-              style={{ padding: "20px 22px", cursor: onSelectTicker ? "pointer" : undefined }}
+              style={{ padding: "16px 20px", cursor: onSelectTicker ? "pointer" : undefined }}
               onClick={onSelectTicker ? () => onSelectTicker(h.ticker) : undefined}
             >
               <div className="flex items-baseline gap-4 flex-wrap">
-                <span className="h-display" style={{ fontSize: 28 }}>
+                <span
+                  style={{
+                    fontFamily: "var(--mono)",
+                    fontSize: 20,
+                    color: "var(--ink-1)",
+                    fontWeight: 500,
+                  }}
+                >
                   {h.ticker}
                 </span>
                 {h.nameZh && (
-                  <span className="h-cn" style={{ fontSize: 16, color: "var(--ink-2)" }}>
+                  <span style={{ fontSize: 14, color: "var(--ink-2)" }}>
                     {h.nameZh}
                   </span>
                 )}
-                <span className="lbl-sm">
+                <span className="lbl-sm" style={{ textTransform: "none", letterSpacing: 0 }}>
                   {h.nameEn} · {h.exchange}
                 </span>
                 <span

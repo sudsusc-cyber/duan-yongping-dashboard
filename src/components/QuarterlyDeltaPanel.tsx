@@ -24,7 +24,7 @@ function fmtSh(n: number): string {
 export default function QuarterlyDeltaPanel({ delta }: Props) {
   const s = delta.summary;
   return (
-    <section className="max-w-[1480px] mx-auto px-10 mb-20">
+    <section className="max-w-[1280px] mx-auto px-8 mb-16">
       <div className="flex items-baseline gap-4 mb-7">
         <span className="h-sc" style={{ fontSize: 12, color: "var(--ink-1)" }}>
           Quarterly Acts · {delta.currentTag} vs {delta.previousTag}

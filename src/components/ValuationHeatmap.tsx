@@ -89,7 +89,7 @@ export default function ValuationHeatmap({
   const usingPercentile = !!fundamentals && Object.keys(fundamentals.tickers).length > 0;
 
   return (
-    <section className="max-w-[1480px] mx-auto px-10 mb-20">
+    <section className="max-w-[1280px] mx-auto px-8 mb-16">
       <div className="flex items-baseline gap-4 mb-3">
         <span className="h-sc" style={{ fontSize: 12, color: "var(--ink-1)" }}>
           Valuation Heat · {usingPercentile ? "5Y price percentile" : "PE-derived"}

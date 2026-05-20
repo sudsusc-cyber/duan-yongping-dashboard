@@ -31,9 +31,16 @@ import {
   valueScaleForFilingDate,
   type RawInfoTableRow,
 } from "./lib/parse-13f-xml";
-import { resolveCusip } from "./lib/cusip-ticker-map";
+import {
+  resolveCusip,
+  loadAutoResolvedFrom,
+  appendAutoResolvedTo,
+  type TickerMeta,
+} from "./lib/cusip-ticker-map";
+import { resolveCusipsViaOpenFigi } from "./lib/openfigi";
 
 const DEFAULT_CIK = "0001759760"; // H&H International Investment, LLC
+const AUTO_CUSIP_PATH = "data/cusip-resolved.json";
 
 // ─────────────────────────────────────────────────── arg parsing
 
@@ -161,6 +168,10 @@ async function main() {
   );
   console.log(`[fetch-13f] UA="${process.env.SEC_USER_AGENT}"`);
 
+  // Load auto-resolved CUSIP cache (OpenFIGI results from past runs).
+  const autoCusipPath = resolve(process.cwd(), AUTO_CUSIP_PATH);
+  loadAutoResolvedFrom(autoCusipPath);
+
   const submissions = await listFilings(args.cik);
   console.log(
     `[fetch-13f] filer="${submissions.name}"  ` +
@@ -206,6 +217,10 @@ async function main() {
     status: string;
   }> = [];
 
+  // Records we just wrote, kept so we can patch them after OpenFIGI resolves
+  // any unknown CUSIPs.
+  const written: Array<{ tag: string; path: string; record: Quarter13F }> = [];
+
   for (const filing of targets) {
     const tag = quarterTagFromReportDate(filing.reportDate);
     const outPath = join(outDir, `${tag}.json`);
@@ -236,6 +251,7 @@ async function main() {
       });
 
       writeFileSync(outPath, JSON.stringify(record, null, 2), "utf8");
+      written.push({ tag, path: outPath, record });
       console.log(
         `[fetch-13f]        rows=${record.totalPositions}  ` +
           `total=$${(record.totalValue / 1e9).toFixed(2)}B  ` +
@@ -259,6 +275,72 @@ async function main() {
         totalUSD: 0,
         status: `error: ${msg.slice(0, 80)}`,
       });
+    }
+  }
+
+  // ── OpenFIGI fallback: any CUSIPs still unresolved get auto-looked up,
+  //    cached in data/cusip-resolved.json, and patched back into the records
+  //    we just wrote. Side effect: no human ever has to update the CUSIP map.
+  const unresolvedCusips = new Set<string>();
+  for (const w of written) {
+    for (const h of w.record.holdings) {
+      if (h.unresolvedCusip) unresolvedCusips.add(h.cusip);
+    }
+  }
+  if (unresolvedCusips.size > 0) {
+    console.log(
+      `[fetch-13f] [openfigi] resolving ${unresolvedCusips.size} unknown CUSIP(s)…`,
+    );
+    const resolved = await resolveCusipsViaOpenFigi([...unresolvedCusips]);
+    if (resolved.size > 0) {
+      const additions: Record<string, TickerMeta> = {};
+      for (const [cusip, meta] of resolved) {
+        additions[cusip] = {
+          ticker: meta.ticker,
+          exchange: meta.exchange,
+          nameEn: meta.name,
+        };
+      }
+      appendAutoResolvedTo(autoCusipPath, additions);
+      console.log(
+        `[fetch-13f] [openfigi] cached ${resolved.size} new entries → ${AUTO_CUSIP_PATH}`,
+      );
+
+      // Patch holdings in the freshly-written records.
+      for (const w of written) {
+        let modified = false;
+        for (const h of w.record.holdings) {
+          if (!h.unresolvedCusip) continue;
+          const r = resolved.get(h.cusip);
+          if (!r) continue;
+          h.ticker = r.ticker;
+          h.exchange = r.exchange;
+          h.nameEn = r.name;
+          h.unresolvedCusip = false;
+          modified = true;
+        }
+        if (modified) {
+          w.record.unresolvedCount = w.record.holdings.filter(
+            (h) => h.unresolvedCusip,
+          ).length;
+          writeFileSync(w.path, JSON.stringify(w.record, null, 2), "utf8");
+          console.log(`[fetch-13f] [openfigi] updated ${w.tag}`);
+          // Reflect the patched status in the summary line.
+          const s = summary.find((x) => x.tag === w.tag);
+          if (s) {
+            s.status =
+              w.record.unresolvedCount > 0
+                ? `ok (${w.record.unresolvedCount} unresolved after openfigi)`
+                : "ok";
+          }
+        }
+      }
+    }
+    const stillMissing = [...unresolvedCusips].filter((c) => !resolved.has(c));
+    if (stillMissing.length > 0) {
+      console.warn(
+        `[fetch-13f] [openfigi] could not resolve: ${stillMissing.join(", ")}`,
+      );
     }
   }
 

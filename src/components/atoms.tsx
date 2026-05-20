@@ -1,20 +1,11 @@
 import type { ReactNode } from "react";
 
-// ─────────────────────────────────────────────── Stamp · 段印章
-
-export function Stamp({ char = "段", size = 92 }: { char?: string; size?: number }) {
-  return (
-    <span
-      className="seal shrink-0"
-      style={{ width: size, height: size, fontSize: Math.round(size * 0.65) }}
-    >
-      {char}
-    </span>
-  );
+// ── Stamp · kept as no-op (legacy import safety) ──────────
+export function Stamp(_: { char?: string; size?: number } = {}) {
+  return null;
 }
 
-// ─────────────────────────────────────────────── BanXin · corner-marked card
-
+// ── BanXin · simple bordered card (no corner marks in neutral mode) ──
 export function BanXin({
   children,
   className = "",
@@ -30,17 +21,12 @@ export function BanXin({
 }) {
   return (
     <As className={`ban-xin ${className}`} style={style} onClick={onClick}>
-      <span className="corner-mark tl" />
-      <span className="corner-mark tr" />
-      <span className="corner-mark bl" />
-      <span className="corner-mark br" />
       {children}
     </As>
   );
 }
 
-// ─────────────────────────────────────────────── WeightBar
-
+// ── WeightBar ────────────────────────────────────────────
 export function WeightBar({ pct, width = 90 }: { pct: number; width?: number | string }) {
   return (
     <div className="weight-bar" style={{ width }}>
@@ -49,8 +35,7 @@ export function WeightBar({ pct, width = 90 }: { pct: number; width?: number | s
   );
 }
 
-// ─────────────────────────────────────────────── DeltaBadge
-
+// ── DeltaBadge ───────────────────────────────────────────
 export type ActionKind = "NEW" | "ADD" | "REDUCE" | "CLOSED" | "HOLD";
 
 export function DeltaBadge({
@@ -76,16 +61,14 @@ export function DeltaBadge({
   }
 }
 
-// ─────────────────────────────────────────────── FishTail · 古籍鱼尾
-
+// ── FishTail · no-op (legacy) ──────────────────────────
 export function FishTail() {
-  return <span className="fishtail" />;
+  return null;
 }
 
-// ─────────────────────────────────────────────── DataDot · 时间戳条
-
+// ── DataDot ────────────────────────────────────────────
 export function DataDot({
-  color = "var(--gold)",
+  color = "var(--accent)",
   pulse = false,
 }: {
   color?: string;
@@ -97,7 +80,7 @@ export function DataDot({
       style={{
         width: 6,
         height: 6,
-        borderRadius: pulse ? "50%" : 0,
+        borderRadius: "50%",
         background: color,
         boxShadow: pulse ? `0 0 8px ${color}` : undefined,
       }}

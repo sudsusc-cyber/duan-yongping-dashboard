@@ -51,26 +51,54 @@ async function loadAllStatements(): Promise<Record<string, any>> {
   return Object.fromEntries(entries.filter((x): x is readonly [string, any] => x != null));
 }
 
+/**
+ * Scan data/13f-history and return the N most-recent quarter files, newest first.
+ * Filename convention: <year>Q<n>.json (e.g. 2026Q1.json). Sort lexicographically
+ * descending — works because the format is zero-padded year + Q + digit.
+ *
+ * Returns the parsed JSON of each quarter; throws if nothing on disk.
+ */
+async function loadRecentQuarters(n: number): Promise<any[]> {
+  const dir = resolve(process.cwd(), "data/13f-history");
+  const files = (await fs.readdir(dir))
+    .filter((f) => /^\d{4}Q[1-4]\.json$/.test(f))
+    .sort((a, b) => b.localeCompare(a));
+  if (files.length === 0) {
+    throw new Error("No 13F history files in data/13f-history/");
+  }
+  const pick = files.slice(0, n);
+  return Promise.all(pick.map((f) => loadJson<any>(`data/13f-history/${f}`)));
+}
+
+/**
+ * Find the delta file matching <latestQuarterTag>-vs-<prev>.json. We don't need
+ * to know prev — there's exactly one delta file per latest quarter on disk.
+ */
+async function loadLatestDelta(latestTag: string): Promise<any> {
+  const dir = resolve(process.cwd(), "data/13f-deltas");
+  const files = await fs.readdir(dir);
+  const match = files.find((f) => f.startsWith(`${latestTag}-vs-`) && f.endsWith(".json"));
+  if (!match) {
+    throw new Error(`No delta file found for ${latestTag} in data/13f-deltas/`);
+  }
+  return loadJson<any>(`data/13f-deltas/${match}`);
+}
+
+function quarterTagFromReportDate(reportDate: string): string {
+  const [yStr, mStr] = reportDate.split("-");
+  const m = parseInt(mStr, 10);
+  const q = m <= 3 ? 1 : m <= 6 ? 2 : m <= 9 ? 3 : 4;
+  return `${yStr}Q${q}`;
+}
+
 export default async function Home() {
-  const [
-    q4_2025,
-    q3_2025,
-    q2_2025,
-    q1_2025,
-    q4_2024,
-    delta,
-    hk,
-    cn,
-    statements,
-    peerOverlap,
-    fundamentals,
-  ] = await Promise.all([
-    loadJson<any>("data/13f-history/2025Q4.json"),
-    loadJson<any>("data/13f-history/2025Q3.json"),
-    loadJson<any>("data/13f-history/2025Q2.json"),
-    loadJson<any>("data/13f-history/2025Q1.json"),
-    loadJson<any>("data/13f-history/2024Q4.json"),
-    loadJson<any>("data/13f-deltas/2025Q4-vs-2025Q3.json"),
+  // Auto-discover the 5 newest quarters; latest is index 0.
+  const recent = await loadRecentQuarters(5);
+  const latest = recent[0];
+  const latestTag = quarterTagFromReportDate(latest.reportDate);
+
+  const [delta, hk, cn, statements, peerOverlap, fundamentals] = await Promise.all([
+    loadLatestDelta(latestTag),
     loadJson<any>("data/manual/hk-holdings.json"),
     loadJson<any>("data/manual/cn-holdings.json"),
     loadAllStatements(),
@@ -78,14 +106,14 @@ export default async function Home() {
     loadJson<any>("data/fundamentals/snapshot.json").catch(() => null),
   ]);
 
-  const qtrsHeld = computeQtrsHeld([q4_2025, q3_2025, q2_2025, q1_2025, q4_2024]);
+  const qtrsHeld = computeQtrsHeld(recent);
   const closedRecords = (delta.records as any[]).filter(
     (r) => r.action.kind === "CLOSED",
   );
 
   return (
     <DashboardRoot
-      latest={q4_2025}
+      latest={latest}
       delta={delta}
       hk={hk}
       cn={cn}

@@ -4,14 +4,20 @@
  * SEC 13F filings only contain 9-digit CUSIP identifiers. We need tickers
  * for everything (display, real-time quote lookups, peer comparison).
  *
- * Strategy:
- *  1. Local hand-maintained map for every CUSIP H&H has ever held
- *     (their historical universe is tiny — ~30 names).
- *  2. Unknown CUSIPs are returned as-is so the pipeline doesn't choke;
- *     we log a warning and the operator can add the entry.
+ * Two-layer lookup:
+ *  1. Hand-curated map (this file). Authoritative — overrides auto-resolved.
+ *     Useful for share-class disambiguation (GOOGL vs GOOG) and Chinese names.
+ *  2. Auto-resolved cache at `data/cusip-resolved.json`, populated by
+ *     OpenFIGI from `scripts/fetch-13f.ts` post-processing. New 13F filings
+ *     that bring in tickers nobody added by hand get resolved automatically;
+ *     the cache means we only hit OpenFIGI once per CUSIP.
  *
- * To extend: just add a `[cusip]: { ... }` row below.
+ * To extend by hand: add a `[cusip]: { ... }` row below.
+ * To trigger auto-resolve: let `scripts/fetch-13f.ts` run — it'll pick up
+ *   anything unresolved after the hand-map lookup.
  */
+
+import { readFileSync, writeFileSync, existsSync } from "node:fs";
 
 export interface TickerMeta {
   ticker: string;
@@ -55,6 +61,15 @@ export const CUSIP_TICKER_MAP: Record<string, TickerMeta> = {
   "21873S108": { ticker: "CRWV",  exchange: "NASDAQ", nameEn: "CoreWeave Inc. Class A",            nameZh: "CoreWeave", classNote: "A" },
   "G25457105": { ticker: "CRDO",  exchange: "NASDAQ", nameEn: "Credo Technology Group Holding",   nameZh: "Credo" },
   "88023B103": { ticker: "TEM",   exchange: "NASDAQ", nameEn: "Tempus AI Inc. Class A",            nameZh: "Tempus AI", classNote: "A" },
+
+  // 2026Q1 new initiations
+  "91324P102": { ticker: "UNH",   exchange: "NYSE",   nameEn: "UnitedHealth Group Inc.",          nameZh: "联合健康" },
+  "69608A108": { ticker: "PLTR",  exchange: "NASDAQ", nameEn: "Palantir Technologies Inc. Class A", nameZh: "Palantir", classNote: "A" },
+  "871607107": { ticker: "SNPS",  exchange: "NASDAQ", nameEn: "Synopsys Inc.",                    nameZh: "Synopsys" },
+  "22788C105": { ticker: "CRWD",  exchange: "NASDAQ", nameEn: "CrowdStrike Holdings Inc. Class A", nameZh: "CrowdStrike", classNote: "A" },
+  "833445109": { ticker: "SNOW",  exchange: "NYSE",   nameEn: "Snowflake Inc. Class A",            nameZh: "Snowflake",   classNote: "A" },
+  "172573107": { ticker: "CRCL",  exchange: "NYSE",   nameEn: "Circle Internet Group Inc.",       nameZh: "Circle" },
+  "457642205": { ticker: "INOD",  exchange: "NASDAQ", nameEn: "Innodata Inc.",                    nameZh: "Innodata" },
   // Add more as filings reveal new CUSIPs.
 };
 
@@ -63,12 +78,48 @@ export interface ResolvedTicker extends TickerMeta {
   resolved: boolean;
 }
 
+// ── Auto-resolved cache (data/cusip-resolved.json) ───────────────
+//
+// Loaded once on demand. The cache holds CUSIPs resolved by OpenFIGI in
+// past fetch-13f runs so we don't re-query the same CUSIP every Monday.
+let autoResolved: Record<string, TickerMeta> = {};
+let autoLoaded = false;
+
+export function loadAutoResolvedFrom(path: string): void {
+  autoLoaded = true;
+  if (!existsSync(path)) {
+    autoResolved = {};
+    return;
+  }
+  try {
+    autoResolved = JSON.parse(readFileSync(path, "utf8")) as Record<string, TickerMeta>;
+  } catch (err) {
+    console.warn(`[cusip-map] could not parse ${path}: ${err instanceof Error ? err.message : err}`);
+    autoResolved = {};
+  }
+}
+
+/** Append new auto-resolved entries and persist to disk. */
+export function appendAutoResolvedTo(
+  path: string,
+  additions: Record<string, TickerMeta>,
+): void {
+  autoResolved = { ...autoResolved, ...additions };
+  // Sort keys for deterministic diffs.
+  const sorted = Object.fromEntries(
+    Object.entries(autoResolved).sort(([a], [b]) => a.localeCompare(b)),
+  );
+  writeFileSync(path, JSON.stringify(sorted, null, 2) + "\n", "utf8");
+}
+
 export function resolveCusip(cusip: string, fallbackName?: string): ResolvedTicker {
   const key = cusip.toUpperCase().trim();
-  const hit = CUSIP_TICKER_MAP[key];
-  if (hit) {
-    return { ...hit, cusip: key, resolved: true };
-  }
+  const hand = CUSIP_TICKER_MAP[key];
+  if (hand) return { ...hand, cusip: key, resolved: true };
+
+  const auto = autoResolved[key];
+  if (auto) return { ...auto, cusip: key, resolved: true };
+
   return {
     cusip: key,
     ticker: key, // fallback: surface the CUSIP itself so it's visible

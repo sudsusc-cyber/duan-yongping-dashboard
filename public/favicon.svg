@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="10" fill="#14161b"/>
+  <rect x="2" y="2" width="60" height="60" rx="9" fill="none" stroke="#b8c2cc" stroke-width="1.5" opacity="0.5"/>
+  <text x="32" y="44" text-anchor="middle" font-family="'Noto Sans SC','Inter',sans-serif" font-weight="600" font-size="36" fill="#e8eaec">段</text>
+</svg>

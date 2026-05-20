@@ -1,6 +1,6 @@
 export default function DisclaimerBanner() {
   return (
-    <section className="max-w-[1280px] mx-auto px-8 mt-6 mb-6">
+    <section className="max-w-[1280px] mx-auto px-4 sm:px-8 mt-4 sm:mt-6 mb-4 sm:mb-6">
       <div
         className="flex items-start gap-3 px-4 py-3 rounded-md"
         style={{
@@ -19,7 +19,7 @@ export default function DisclaimerBanner() {
             {" "}不构成投资建议；段公曰&ldquo;不要跟着我买&rdquo;。
           </span>
         </div>
-        <div className="ml-auto shrink-0 h-mono" style={{ fontSize: 10, color: "var(--ink-4)" }}>
+        <div className="hidden sm:block ml-auto shrink-0 h-mono" style={{ fontSize: 10, color: "var(--ink-4)" }}>
           NOT INVESTMENT ADVICE
         </div>
       </div>

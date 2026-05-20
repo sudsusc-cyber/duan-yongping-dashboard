@@ -90,15 +90,15 @@ export default function HoldingsTable({
   const maxWeight = holdings.reduce((m, h) => Math.max(m, h.weight), 0);
 
   return (
-    <section className="max-w-[1280px] mx-auto px-8 mb-16">
+    <section className="max-w-[1280px] mx-auto px-4 sm:px-8 mb-12 sm:mb-16">
       <div className="flex items-baseline gap-3 mb-3">
         <span style={{ fontSize: 13, color: "var(--ink-1)", fontWeight: 500 }}>
           持仓权重 / Allocation
         </span>
-        <span className="ml-auto lbl-sm">实时价 · 腾讯财经 · 闪动 = 刚刚变化</span>
+        <span className="hidden sm:block ml-auto lbl-sm">实时价 · 腾讯财经 · 闪动 = 刚刚变化</span>
       </div>
 
-      <div className="overflow-x-auto -mx-8 px-8">
+      <div className="overflow-x-auto -mx-4 px-4 sm:-mx-8 sm:px-8">
       <table className="book-table" style={{ minWidth: 960 }}>
         <thead>
           <tr>
@@ -225,13 +225,13 @@ export default function HoldingsTable({
       </div>
 
       <div
-        className="mt-4 pt-3 border-t flex justify-between items-baseline h-mono"
+        className="mt-4 pt-3 border-t flex flex-col sm:flex-row sm:justify-between gap-1 sm:items-baseline h-mono"
         style={{ borderColor: "var(--line-rule)", fontSize: 11, color: "var(--ink-3)" }}
       >
         <span>
           {holdings.length} active · {closedRecords.length} closed last quarter
         </span>
-        <span>weights at filing date · live prices via 腾讯财经 · 闪动指示刚刚变化</span>
+        <span className="hidden sm:inline">weights at filing date · live prices via 腾讯财经 · 闪动指示刚刚变化</span>
       </div>
     </section>
   );

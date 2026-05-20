@@ -274,6 +274,35 @@
     transition: all 0.18s ease;
   }
   .sync-btn:hover { color: var(--ink-1); border-color: var(--accent); }
+
+  /* ── Quartet summary cards ───────────────────── */
+  .quartet-card { padding: 18px; }
+  .quartet-bignum { font-size: 36px; }
+  .quartet-datenum { font-size: 30px; }
+}
+
+/* ── Mobile responsive ───────────────────────────── */
+@media (max-width: 639px) {
+  /* Heat grid: 3 cols on mobile */
+  .heat-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .heat-cell { padding: 10px; }
+  .heat-cell .tk { font-size: 14px; }
+  .heat-cell .pe { font-size: 10px; }
+  .heat-cell .pct { font-size: 9px; }
+
+  /* Quartet card */
+  .quartet-card { padding: 12px 10px; }
+  .quartet-bignum { font-size: 26px; }
+  .quartet-datenum { font-size: 20px; }
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  /* Heat grid: 4 cols on tablet */
+  .heat-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 
 @layer utilities {

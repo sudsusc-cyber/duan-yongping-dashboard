@@ -14,7 +14,7 @@ interface Props {
 
 export default function MarketTabs({ market, onChange, usCount, hkCount, cnCount }: Props) {
   return (
-    <section className="max-w-[1280px] mx-auto px-8 mb-4">
+    <section className="max-w-[1280px] mx-auto px-4 sm:px-8 mb-4">
       <div className="tab-bar">
         <Tab active={market === "US"} onClick={() => onChange("US")}>
           <span>US</span>
@@ -32,7 +32,7 @@ export default function MarketTabs({ market, onChange, usCount, hkCount, cnCount
         </Tab>
 
         <div
-          className="ml-auto h-mono flex items-center"
+          className="hidden sm:flex ml-auto h-mono items-center"
           style={{ fontSize: 10, color: "var(--ink-4)", padding: "14px 0", letterSpacing: "0.04em" }}
         >
           sorted by weight ↓

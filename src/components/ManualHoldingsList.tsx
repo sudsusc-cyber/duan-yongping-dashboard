@@ -40,10 +40,10 @@ export default function ManualHoldingsList({
   const sym = priceSymbol(currency);
 
   return (
-    <section className="max-w-[1280px] mx-auto px-8 mb-16 grid grid-cols-12 gap-8">
+    <section className="max-w-[1280px] mx-auto px-4 sm:px-8 mb-12 sm:mb-16 grid grid-cols-1 sm:grid-cols-12 gap-5 sm:gap-8">
       <BanXin
         as="aside"
-        className="col-span-4 self-start"
+        className="sm:col-span-4 self-start"
         style={{ padding: "18px 20px" }}
       >
         <div className="lbl mb-3" style={{ color: "var(--rise)" }}>
@@ -60,7 +60,7 @@ export default function ManualHoldingsList({
         </p>
       </BanXin>
 
-      <div className="col-span-8 space-y-5">
+      <div className="sm:col-span-8 space-y-4 sm:space-y-5">
         {holdings.map((h) => {
           const q = quotes[h.secid];
           return (
@@ -110,7 +110,7 @@ export default function ManualHoldingsList({
                     : ""}
                 </span>
               </div>
-              <div className="mt-3 grid grid-cols-12 gap-4">
+              <div className="mt-3 grid grid-cols-12 gap-3 sm:gap-4">
                 <div className="col-span-8">
                   <div className="lbl-sm mb-1">来源 / SOURCE</div>
                   <div className="h-mono" style={{ fontSize: 12, color: "var(--ink-2)" }}>

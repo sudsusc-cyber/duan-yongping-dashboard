@@ -89,8 +89,8 @@ export default function ValuationHeatmap({
   const usingPercentile = !!fundamentals && Object.keys(fundamentals.tickers).length > 0;
 
   return (
-    <section className="max-w-[1280px] mx-auto px-8 mb-16">
-      <div className="flex items-baseline gap-4 mb-3">
+    <section className="max-w-[1280px] mx-auto px-4 sm:px-8 mb-12 sm:mb-16">
+      <div className="flex flex-wrap items-baseline gap-3 sm:gap-4 mb-3">
         <span className="h-sc" style={{ fontSize: 12, color: "var(--ink-1)" }}>
           Valuation Heat · {usingPercentile ? "5Y price percentile" : "PE-derived"}
         </span>
@@ -104,9 +104,9 @@ export default function ValuationHeatmap({
         >
           估 · 值 · 热 · 力 · 图
         </span>
-        <span className="ml-auto lbl-sm">5Y 低位 · 深绿  /  5Y 高位 · 深红</span>
+        <span className="hidden sm:block ml-auto lbl-sm">5Y 低位 · 深绿  /  5Y 高位 · 深红</span>
       </div>
-      <div className="lbl-sm mb-5" style={{ color: "var(--ink-4)" }}>
+      <div className="lbl-sm mb-4 sm:mb-5" style={{ color: "var(--ink-4)" }}>
         {usingPercentile
           ? `当前价在 5 年月线收盘分布中的百分位 (Yahoo Finance · 60 monthly bars · ` +
             `${new Date(fundamentals!.generatedAt).toISOString().slice(0, 10)})。` +

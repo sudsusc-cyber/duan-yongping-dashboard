@@ -64,8 +64,8 @@ const peerLabel = (name: string) =>
 
 export default function PeerOverlapMatrix({ overlap }: Props) {
   return (
-    <section className="max-w-[1280px] mx-auto px-8 mb-16">
-      <div className="flex items-baseline gap-4 mb-3">
+    <section className="max-w-[1280px] mx-auto px-4 sm:px-8 mb-12 sm:mb-16">
+      <div className="flex flex-wrap items-baseline gap-3 sm:gap-4 mb-3">
         <span className="h-sc" style={{ fontSize: 12, color: "var(--ink-1)" }}>
           Peer Overlap · By CUSIP
         </span>
@@ -79,19 +79,19 @@ export default function PeerOverlapMatrix({ overlap }: Props) {
         >
           同 · 道 · 共 · 持
         </span>
-        <span className="ml-auto lbl-sm">
+        <span className="hidden sm:block ml-auto lbl-sm">
           H&amp;H {overlap.hhReportDate} · {overlap.hhEquityCusipCount} equity CUSIPs
         </span>
       </div>
 
-      <div className="grid grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {overlap.peers.map((peer) => (
           <PeerCard key={peer.cik} peer={peer} />
         ))}
       </div>
 
       <div
-        className="mt-4 pt-3 border-t flex justify-between items-baseline h-mono"
+        className="mt-4 pt-3 border-t flex flex-col sm:flex-row sm:justify-between gap-1 sm:items-baseline h-mono"
         style={{ borderColor: "var(--line-rule)", fontSize: 11, color: "var(--ink-3)" }}
       >
         <span>
@@ -108,7 +108,7 @@ function PeerCard({ peer }: { peer: PeerStats }) {
   const isEmpty = peer.overlapCount === 0;
 
   return (
-    <BanXin as="article" className="col-span-4" style={{ padding: "22px 24px" }}>
+    <BanXin as="article" style={{ padding: "20px 22px" }}>
       {/* ── Header ─────────────────────────────────── */}
       <div className="flex items-baseline justify-between mb-1">
         <div>

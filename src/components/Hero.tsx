@@ -44,36 +44,42 @@ export default function Hero({ fetchedAt, latestFiling }: Props) {
         WebkitBackdropFilter: "blur(6px)",
       }}
     >
-      <div className="max-w-[1280px] mx-auto px-8 h-14 flex items-center gap-6">
-        <div className="flex items-baseline gap-3">
+      <div className="max-w-[1280px] mx-auto px-4 sm:px-8 min-h-[56px] h-auto py-2 sm:h-14 sm:py-0 flex items-center gap-3 sm:gap-6">
+        <div className="flex items-baseline gap-2 sm:gap-3">
           <span style={{ fontSize: 16, fontWeight: 600, color: "var(--ink-1)", letterSpacing: "0.04em" }}>
             段永平
           </span>
           <span
-            className="h-mono"
+            className="h-mono hidden sm:inline"
             style={{ fontSize: 10, color: "var(--ink-3)", letterSpacing: "0.10em" }}
           >
             DUAN YONGPING · H&amp;H 13F MIRROR
           </span>
+          <span
+            className="h-mono sm:hidden"
+            style={{ fontSize: 9, color: "var(--ink-3)", letterSpacing: "0.08em" }}
+          >
+            H&amp;H 13F
+          </span>
         </div>
 
         <div
-          className="ml-auto flex items-center gap-6 h-mono"
+          className="ml-auto flex items-center gap-3 sm:gap-6 h-mono"
           style={{ fontSize: 11, color: "var(--ink-3)", letterSpacing: "0.04em" }}
         >
           <span className="flex items-center gap-2">
             <DataDot color="var(--accent)" pulse />
             <span suppressHydrationWarning>
-              LAST · {now ? clockStrip(now) : "——:——:——"}
+              {now ? clockStrip(now) : "——:——:——"}
             </span>
           </span>
-          <span style={{ color: "var(--ink-4)" }}>·</span>
-          <span suppressHydrationWarning>
+          <span className="hidden sm:inline" style={{ color: "var(--ink-4)" }}>·</span>
+          <span className="hidden sm:inline" suppressHydrationWarning>
             QUOTE {fetchedAt ? quoteAge(fetchedAt, now) : "—"}
           </span>
-          <span style={{ color: "var(--ink-4)" }}>·</span>
-          <span>13F {latestFiling.reportDate}</span>
-          <span style={{ color: "var(--ink-4)" }}>·</span>
+          <span className="hidden sm:inline" style={{ color: "var(--ink-4)" }}>·</span>
+          <span className="hidden sm:inline">13F {latestFiling.reportDate}</span>
+          <span className="hidden sm:inline" style={{ color: "var(--ink-4)" }}>·</span>
           <button
             type="button"
             className="sync-btn"

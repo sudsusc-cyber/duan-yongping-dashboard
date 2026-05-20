@@ -1,8 +1,9 @@
 name: Daily Fundamentals Refresh
 
-# Refresh 5Y price percentile snapshot from Yahoo Finance.
+# Refresh PE (forward/trailing) + 5Y price snapshot from Yahoo Finance.
 # Runs daily after US close (~22:00 UTC = 06:00 Beijing next day).
 # No SEC secret needed — Yahoo's chart API is unauth + UA-only.
+# Auto-detects the latest quarter in data/13f-history/.
 
 on:
   schedule:
@@ -24,7 +25,7 @@ jobs:
 
       - run: npm ci
 
-      - name: Fetch 5Y price percentile snapshot
+      - name: Fetch PE + 5Y price snapshot
         run: npx tsx scripts/fetch-fundamentals.ts
 
       - name: Commit if data changed
@@ -35,6 +36,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No fundamentals delta — skipping commit."
           else
-            git commit -m "chore(data): daily 5Y price percentile refresh"
+            git commit -m "chore(data): daily PE + 5Y snapshot refresh"
             git push
           fi

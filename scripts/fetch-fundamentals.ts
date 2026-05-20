@@ -21,7 +21,7 @@
 
 import "./lib/load-env";
 
-import { writeFileSync, mkdirSync, readFileSync } from "node:fs";
+import { writeFileSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
 import { resolve, join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import { setGlobalDispatcher, Agent, ProxyAgent } from "undici";
@@ -52,6 +52,11 @@ interface ChartResponse {
         fiftyTwoWeekLow?: number;
         currency?: string;
         symbol?: string;
+        // PE / EPS fields — present for equities
+        trailingPE?: number;
+        forwardPE?: number;
+        epsTrailingTwelveMonths?: number;
+        epsForward?: number;
       };
       timestamp?: number[];
       indicators: {
@@ -77,6 +82,14 @@ interface FundamentalRow {
   /** number of monthly bars used */
   samples: number;
   fetchedAt: string;
+  /** Yahoo trailing 12-month PE (null if not available or negative earnings) */
+  trailingPE?: number;
+  /** Yahoo forward 12-month PE (analyst consensus estimate) */
+  forwardPE?: number;
+  /** Trailing 12-month EPS in USD */
+  epsTrailingTwelveMonths?: number;
+  /** Forward 12-month EPS estimate */
+  epsForward?: number;
 }
 
 /** Map our H&H ticker to Yahoo's symbol convention. */
@@ -126,6 +139,12 @@ async function compute(yahooSym: string, ticker: string): Promise<FundamentalRow
   const current = r.meta.regularMarketPrice ?? closes[closes.length - 1];
   const sorted = [...closes].sort((a, b) => a - b);
 
+  // Only keep PE values that are positive and finite (negative EPS → no meaningful PE).
+  const trailingPE = r.meta.trailingPE != null && r.meta.trailingPE > 0 && Number.isFinite(r.meta.trailingPE)
+    ? r.meta.trailingPE : undefined;
+  const forwardPE = r.meta.forwardPE != null && r.meta.forwardPE > 0 && Number.isFinite(r.meta.forwardPE)
+    ? r.meta.forwardPE : undefined;
+
   return {
     ticker,
     yahooSymbol: yahooSym,
@@ -136,14 +155,25 @@ async function compute(yahooSym: string, ticker: string): Promise<FundamentalRow
     fiveYearPctile: percentile(closes, current),
     samples: closes.length,
     fetchedAt: new Date().toISOString(),
+    trailingPE,
+    forwardPE,
+    epsTrailingTwelveMonths: r.meta.epsTrailingTwelveMonths,
+    epsForward: r.meta.epsForward,
   };
 }
 
 async function main() {
   console.log(`[fundamentals] proxy: ${PROXY_URL || "(direct)"}`);
 
-  // Read latest H&H quarter to know which tickers we need.
-  const latestPath = resolve(process.cwd(), "data/13f-history/2025Q4.json");
+  // Auto-detect latest H&H quarter file (sorted lexicographically: 2026Q1 > 2025Q4 etc).
+  const historyDir = resolve(process.cwd(), "data/13f-history");
+  const quarterFiles = readdirSync(historyDir)
+    .filter((f) => /^\d{4}Q\d\.json$/.test(f))
+    .sort();
+  if (quarterFiles.length === 0) throw new Error("no quarter files in data/13f-history");
+  const latestFile = quarterFiles[quarterFiles.length - 1];
+  console.log(`[fundamentals] using latest quarter: ${latestFile}`);
+  const latestPath = join(historyDir, latestFile);
   const latest = JSON.parse(readFileSync(latestPath, "utf8")) as {
     holdings: Array<{ ticker: string; putCall?: string }>;
   };
@@ -166,8 +196,13 @@ async function main() {
       const row = await compute(sym, t);
       if (row) {
         rows.push(row);
+        const peStr = row.forwardPE
+          ? `fwd PE ${row.forwardPE.toFixed(1)}`
+          : row.trailingPE
+            ? `ttm PE ${row.trailingPE.toFixed(1)}`
+            : "no PE";
         console.log(
-          `now $${row.currentPrice.toFixed(2)} · ` +
+          `now $${row.currentPrice.toFixed(2)} · ${peStr} · ` +
             `5Y [${row.fiveYearLow.toFixed(2)}–${row.fiveYearHigh.toFixed(2)}] · ` +
             `pctile ${row.fiveYearPctile.toFixed(0)}%`,
         );

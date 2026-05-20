@@ -21,6 +21,10 @@ export interface FundamentalRow {
   fiveYearPctile: number;
   samples: number;
   fetchedAt: string;
+  trailingPE?: number;
+  forwardPE?: number;
+  epsTrailingTwelveMonths?: number;
+  epsForward?: number;
 }
 
 export interface FundamentalsSnapshot {
@@ -38,13 +42,22 @@ interface Props {
 }
 
 /**
- * Tier from Yahoo 5Y monthly-close percentile of the *current* price.
- * Lower percentile = price near 5Y low = relatively cheap.
- *   0-25%  → tier 1 (deep green) · CHEAP
- *  25-50%  → tier 2 (light green) · FAIR
- *  50-75%  → tier 3 (light red)   · FULL
- *  75-100% → tier 4 (deep red)    · RICH
+ * Tier from PE ratio (forward preferred, trailing fallback).
+ * Thresholds reflect a quality-growth portfolio where 25x earnings
+ * is reasonable fair value for a moat business:
+ *   < 15  → CHEAP  (deep discount, cyclical trough, or value territory)
+ *   15-25 → FAIR   (reasonable for stable compounders)
+ *   25-40 → FULL   (priced for solid growth, limited margin of safety)
+ *   > 40  → RICH   (requires very high growth to justify)
  */
+function tierForPE(pe: number): { tier: 1 | 2 | 3 | 4; label: string } {
+  if (pe < 15) return { tier: 1, label: "CHEAP" };
+  if (pe < 25) return { tier: 2, label: "FAIR" };
+  if (pe < 40) return { tier: 3, label: "FULL" };
+  return { tier: 4, label: "RICH" };
+}
+
+/** Fallback when no PE is available: use 5Y price percentile. */
 function tierForPercentile(pct: number): { tier: 1 | 2 | 3 | 4; label: string } {
   if (pct < 25) return { tier: 1, label: "CHEAP" };
   if (pct < 50) return { tier: 2, label: "FAIR" };
@@ -52,13 +65,10 @@ function tierForPercentile(pct: number): { tier: 1 | 2 | 3 | 4; label: string } 
   return { tier: 4, label: "RICH" };
 }
 
-/** Fallback when no 5Y fundamentals row: use raw PE TTM absolute tier. */
-function tierForPe(pe?: number): { tier: 1 | 2 | 3 | 4; label: string } {
-  if (pe == null) return { tier: 2, label: "—" };
-  if (pe < 15) return { tier: 1, label: "CHEAP" };
-  if (pe < 25) return { tier: 2, label: "FAIR" };
-  if (pe < 40) return { tier: 3, label: "FULL" };
-  return { tier: 4, label: "RICH" };
+/** Fallback when no fundamentals snapshot: use live quote PE. */
+function tierForLivePe(pe?: number): { tier: 1 | 2 | 3 | 4; label: string } {
+  if (pe == null || pe <= 0) return { tier: 2, label: "—" };
+  return tierForPE(pe);
 }
 
 export default function ValuationHeatmap({
@@ -72,16 +82,34 @@ export default function ValuationHeatmap({
     .map((h) => {
       const q = quotes[secidFor(h)];
       const f = fundamentals?.tickers[h.ticker];
-      const t = f ? tierForPercentile(f.fiveYearPctile) : tierForPe(q?.pe);
+
+      // Valuation priority:
+      // 1. Yahoo forward PE (analyst consensus, most forward-looking)
+      // 2. Yahoo trailing PE (actual last-12-month earnings)
+      // 3. Live Tencent PE (real-time but less precise for non-US)
+      // 4. 5Y price percentile (last resort — price position, not earnings)
+      const fwdPE = f?.forwardPE;
+      const ttmPE = f?.trailingPE ?? (q?.pe != null && q.pe > 0 ? q.pe : undefined);
+      const activePE = fwdPE ?? ttmPE;
+      const t = activePE != null ? tierForPE(activePE)
+        : f ? tierForPercentile(f.fiveYearPctile)
+        : tierForLivePe(q?.pe);
+
       return {
         ticker: h.ticker,
         weight: h.weight,
-        pe: q?.pe,
+        fwdPE,
+        ttmPE,
         pctile: f?.fiveYearPctile,
         fiveYearLow: f?.fiveYearLow,
         fiveYearHigh: f?.fiveYearHigh,
         tier: t.tier,
         label: t.label,
+        // Which metric actually drove the tier
+        metricLabel: fwdPE != null ? "fwd PE"
+          : ttmPE != null ? "ttm PE"
+          : f ? "5Y%"
+          : "PE",
       };
     })
     .sort((a, b) => a.tier - b.tier || b.weight - a.weight);
@@ -98,13 +126,14 @@ export default function ValuationHeatmap({
   }, []);
 
   const padCount = (colCount - (cells.length % colCount)) % colCount;
+  const usingPE = cells.some((c) => c.fwdPE != null || c.ttmPE != null);
   const usingPercentile = !!fundamentals && Object.keys(fundamentals.tickers).length > 0;
 
   return (
     <section className="max-w-[1280px] mx-auto px-4 sm:px-8 mb-12 sm:mb-16">
       <div className="flex flex-wrap items-baseline gap-3 sm:gap-4 mb-3">
         <span className="h-sc" style={{ fontSize: 12, color: "var(--ink-1)" }}>
-          Valuation Heat · {usingPercentile ? "5Y price percentile" : "PE-derived"}
+          Valuation Heat · {usingPE ? "P/E ratio" : usingPercentile ? "5Y price pctile" : "PE-derived"}
         </span>
         <span
           style={{
@@ -119,12 +148,12 @@ export default function ValuationHeatmap({
         <span className="hidden sm:block ml-auto lbl-sm">5Y 低位 · 深绿  /  5Y 高位 · 深红</span>
       </div>
       <div className="lbl-sm mb-4 sm:mb-5" style={{ color: "var(--ink-4)" }}>
-        {usingPercentile
-          ? `当前价在 5 年月线收盘分布中的百分位 (Yahoo Finance · 60 monthly bars · ` +
-            `${new Date(fundamentals!.generatedAt).toISOString().slice(0, 10)})。` +
-            `档分:0–25 / 25–50 / 50–75 / 75–100。`
-          : "v0.1 用 PE TTM 绝对值粗分四档 (<15 / 15–25 / 25–40 / ≥40)。" +
-            "data/fundamentals/snapshot.json 缺失 — 跑 npm run fetch:fundamentals 后即切换为 5Y 百分位。"}
+        {usingPE
+          ? `市盈率分档：<15 · 15–25 · 25–40 · ≥40。优先 Yahoo 远期 PE（分析师一致预期），次选 TTM PE，再次选实时报价 PE。` +
+            (fundamentals ? ` 数据截止 ${new Date(fundamentals.generatedAt).toISOString().slice(0, 10)}。` : "")
+          : usingPercentile
+            ? `当前价在 5 年月线收盘区间中的位置 (Yahoo Finance · ${fundamentals ? new Date(fundamentals.generatedAt).toISOString().slice(0, 10) : "—"})。PE 数据缺失时使用此指标。`
+            : "fundamentals/snapshot.json 缺失 — 跑 npm run fetch:fundamentals 后切换为 PE 估值。"}
       </div>
 
       <div className="heat-grid">
@@ -133,21 +162,31 @@ export default function ValuationHeatmap({
             <div className="lbl-sm">{c.label}</div>
             <div className="tk">{c.ticker}</div>
             <div>
-              {c.pctile != null ? (
+              {c.fwdPE != null ? (
+                <>
+                  <div className="pe">fwd {c.fwdPE.toFixed(1)}x</div>
+                  <div className="pct mt-1">
+                    {c.ttmPE != null ? `ttm ${c.ttmPE.toFixed(1)}x` : `wt ${c.weight.toFixed(1)}%`}
+                  </div>
+                </>
+              ) : c.ttmPE != null ? (
+                <>
+                  <div className="pe">ttm {c.ttmPE.toFixed(1)}x</div>
+                  <div className="pct mt-1">wt {c.weight.toFixed(1)}%</div>
+                </>
+              ) : c.pctile != null ? (
                 <>
                   <div className="pe">5Y {c.pctile.toFixed(0)}%</div>
                   <div className="pct mt-1">
-                    {c.fiveYearLow != null && c.fiveYearHigh != null ? (
-                      <>
-                        ${c.fiveYearLow.toFixed(0)}–{c.fiveYearHigh.toFixed(0)}
-                      </>
-                    ) : null}
+                    {c.fiveYearLow != null && c.fiveYearHigh != null
+                      ? `$${c.fiveYearLow.toFixed(0)}–${c.fiveYearHigh.toFixed(0)}`
+                      : `wt ${c.weight.toFixed(1)}%`}
                   </div>
                 </>
               ) : (
                 <>
-                  <div className="pe">PE {c.pe != null ? c.pe.toFixed(1) : "—"}</div>
-                  <div className="pct mt-1">weight {c.weight.toFixed(2)}%</div>
+                  <div className="pe">PE —</div>
+                  <div className="pct mt-1">wt {c.weight.toFixed(1)}%</div>
                 </>
               )}
             </div>
@@ -167,19 +206,19 @@ export default function ValuationHeatmap({
       >
         <span className="flex items-center gap-2">
           <i className="inline-block heat-q1" style={{ width: 14, height: 14 }} />
-          {usingPercentile ? "0–25%" : "<15"}
+          PE &lt;15
         </span>
         <span className="flex items-center gap-2">
           <i className="inline-block heat-q2" style={{ width: 14, height: 14 }} />
-          {usingPercentile ? "25–50%" : "15–25"}
+          PE 15–25
         </span>
         <span className="flex items-center gap-2">
           <i className="inline-block heat-q3" style={{ width: 14, height: 14 }} />
-          {usingPercentile ? "50–75%" : "25–40"}
+          PE 25–40
         </span>
         <span className="flex items-center gap-2">
           <i className="inline-block heat-q4" style={{ width: 14, height: 14 }} />
-          {usingPercentile ? "75–100%" : "≥40"}
+          PE ≥40
         </span>
       </div>
     </section>

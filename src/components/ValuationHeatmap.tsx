@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import type { Quote } from "@/lib/types";
 
 interface Holding {
@@ -85,7 +86,18 @@ export default function ValuationHeatmap({
     })
     .sort((a, b) => a.tier - b.tier || b.weight - a.weight);
 
-  const padCount = (6 - (cells.length % 6)) % 6;
+  // Detect actual column count so padCount fills exactly one last row,
+  // not multiple empty rows (e.g. 3-col mobile with 6-col padding formula).
+  const [colCount, setColCount] = useState(6);
+  useEffect(() => {
+    const update = () =>
+      setColCount(window.innerWidth < 640 ? 3 : window.innerWidth < 1024 ? 4 : 6);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  const padCount = (colCount - (cells.length % colCount)) % colCount;
   const usingPercentile = !!fundamentals && Object.keys(fundamentals.tickers).length > 0;
 
   return (

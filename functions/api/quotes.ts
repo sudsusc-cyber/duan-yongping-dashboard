@@ -28,6 +28,12 @@ interface Quote {
   changeAbs: number;
   changePct: number;
   pe?: number;
+  // US extended-hours (盘前/盘后), layered on from Yahoo. See fetchExtendedOne.
+  session?: "pre" | "regular" | "post" | "closed";
+  extPrice?: number;
+  extChangeAbs?: number;
+  extChangePct?: number;
+  extTime?: string;
   fetchedAt: string;
 }
 
@@ -103,6 +109,137 @@ async function fetchOne(secid: string): Promise<Quote | null> {
   };
 }
 
+// ───────────────────────────────── US extended-hours (盘前/盘后) ──────────────
+// Mirrors src/lib/extended.ts. Tencent only carries the regular session, so
+// pre/post-market prices for US equities come from Yahoo's key-free v8 chart
+// (includePrePost). Edge-cached 12s via the cf option to dedup the 1Hz polling.
+
+interface ExtendedInfo {
+  session: "pre" | "regular" | "post" | "closed";
+  extPrice?: number;
+  extChangeAbs?: number;
+  extChangePct?: number;
+  extTime?: string;
+}
+
+interface YahooChart {
+  chart?: {
+    result?: Array<{
+      meta?: {
+        marketState?: string;
+        regularMarketPrice?: number;
+        chartPreviousClose?: number;
+        previousClose?: number;
+      };
+      timestamp?: number[];
+      indicators?: { quote?: Array<{ close?: Array<number | null> }> };
+    }>;
+  };
+}
+
+/** secid → Yahoo symbol, US equities only (105 NASDAQ / 106 NYSE·ARCA). */
+function secidToYahoo(secid: string): string | null {
+  const dot = secid.indexOf(".");
+  if (dot < 0) return null;
+  const ex = Number(secid.slice(0, dot));
+  if (ex !== 105 && ex !== 106) return null;
+  const ticker = secid.slice(dot + 1).replace(/_/g, "."); // BRK_B → BRK.B
+  if (!ticker) return null;
+  return ticker.replace(/\./g, "-"); // BRK.B → BRK-B
+}
+
+function classifyState(state: string): ExtendedInfo["session"] {
+  const s = state.toUpperCase();
+  if (s.startsWith("PRE")) return "pre";
+  if (s.startsWith("POST")) return "post";
+  if (s === "REGULAR") return "regular";
+  return "closed";
+}
+
+/** Number coercion that treats null (Yahoo's gap bars) as missing, not 0. */
+function yNum(v: number | null | undefined): number | undefined {
+  if (typeof v !== "number" || !Number.isFinite(v)) return undefined;
+  return v;
+}
+
+async function fetchExtendedOne(secid: string): Promise<ExtendedInfo | null> {
+  const ysym = secidToYahoo(secid);
+  if (!ysym) return null;
+
+  const url =
+    `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ysym)}` +
+    `?range=1d&interval=1m&includePrePost=true`;
+  const res = await fetch(url, {
+    headers: {
+      "User-Agent": "Mozilla/5.0 (compatible; DuanDashboard/0.1)",
+      Accept: "application/json",
+    },
+    cf: { cacheTtl: 12, cacheEverything: true },
+    signal: AbortSignal.timeout(6_000),
+  } as RequestInit & { cf?: Record<string, unknown> });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = (await res.json()) as YahooChart;
+
+  const r = data?.chart?.result?.[0];
+  if (!r || !r.meta) return null;
+  const meta = r.meta;
+
+  const session = classifyState(String(meta.marketState ?? ""));
+  const baseline =
+    yNum(meta.regularMarketPrice) ??
+    yNum(meta.chartPreviousClose) ??
+    yNum(meta.previousClose);
+
+  const ts = r.timestamp ?? [];
+  const closes = r.indicators?.quote?.[0]?.close ?? [];
+  let extPrice: number | undefined;
+  let extEpoch: number | undefined;
+  for (let i = closes.length - 1; i >= 0; i--) {
+    const c = yNum(closes[i]);
+    if (c !== undefined) {
+      extPrice = c;
+      extEpoch = ts[i];
+      break;
+    }
+  }
+  if (extPrice === undefined) extPrice = yNum(meta.regularMarketPrice);
+
+  let extChangeAbs: number | undefined;
+  let extChangePct: number | undefined;
+  if (extPrice !== undefined && baseline !== undefined && baseline !== 0) {
+    extChangeAbs = extPrice - baseline;
+    extChangePct = (extChangeAbs / baseline) * 100;
+  }
+
+  return {
+    session,
+    extPrice,
+    extChangeAbs,
+    extChangePct,
+    extTime: extEpoch ? new Date(extEpoch * 1000).toISOString() : undefined,
+  };
+}
+
+async function fetchExtended(secids: string[]): Promise<Map<string, ExtendedInfo>> {
+  const out = new Map<string, ExtendedInfo>();
+  const us = [...new Set(secids)].filter((s) => secidToYahoo(s) !== null);
+  if (us.length === 0) return out;
+
+  const settled = await Promise.all(
+    us.map((s) =>
+      fetchExtendedOne(s).catch((err) => {
+        console.warn(`[ext/CF] ${s}: ${err instanceof Error ? err.message : err}`);
+        return null;
+      }),
+    ),
+  );
+  for (let i = 0; i < us.length; i++) {
+    const info = settled[i];
+    if (info) out.set(us[i], info);
+  }
+  return out;
+}
+
 function jsonResponse(body: unknown, init: ResponseInit = {}): Response {
   return new Response(JSON.stringify(body), {
     ...init,
@@ -136,20 +273,38 @@ export async function onRequestGet(context: { request: Request }): Promise<Respo
 
   try {
     const unique = [...new Set(secids)];
-    const settled = await Promise.all(
-      unique.map((s) =>
-        fetchOne(s).catch((err) => {
-          console.warn(`[quotes/CF] ${s}: ${err instanceof Error ? err.message : err}`);
-          return null;
-        }),
+    // Regular quotes (all markets) and US pre/post data run concurrently.
+    const [settled, extended] = await Promise.all([
+      Promise.all(
+        unique.map((s) =>
+          fetchOne(s).catch((err) => {
+            console.warn(`[quotes/CF] ${s}: ${err instanceof Error ? err.message : err}`);
+            return null;
+          }),
+        ),
       ),
-    );
+      fetchExtended(unique),
+    ]);
 
     const quotes: Record<string, Quote> = {};
     for (let i = 0; i < unique.length; i++) {
       const q = settled[i];
       if (q) quotes[unique[i]] = q;
     }
+
+    // Layer pre/post-market data onto the US quotes we got.
+    for (const [secid, info] of extended) {
+      const q = quotes[secid];
+      if (!q) continue;
+      q.session = info.session;
+      if (info.session === "pre" || info.session === "post") {
+        q.extPrice = info.extPrice;
+        q.extChangeAbs = info.extChangeAbs;
+        q.extChangePct = info.extChangePct;
+        q.extTime = info.extTime;
+      }
+    }
+
     const missing = secids.filter((s) => !(s in quotes));
 
     return jsonResponse({

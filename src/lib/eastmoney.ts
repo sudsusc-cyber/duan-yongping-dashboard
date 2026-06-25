@@ -36,6 +36,7 @@
  */
 
 import type { Quote } from "./types";
+import { fetchExtended } from "./extended";
 
 const CACHE_TTL_MS = 2500;
 const QUOTE_CACHE = new Map<string, { quote: Quote; expiresAt: number }>();
@@ -141,19 +142,38 @@ export async function fetchQuotes(secids: string[]): Promise<Map<string, Quote>>
 
   const unique = [...new Set(secids.map((s) => s.trim()).filter(Boolean))];
 
-  const results = await Promise.all(
-    unique.map((s) =>
-      fetchOne(s).catch((err) => {
-        console.warn(`[quote] ${s}: ${err instanceof Error ? err.message : err}`);
-        return null;
-      }),
+  // Regular quotes (all markets) and US extended-hours data fire concurrently
+  // so the pre/post enrichment adds no extra round-trip latency.
+  const [results, extended] = await Promise.all([
+    Promise.all(
+      unique.map((s) =>
+        fetchOne(s).catch((err) => {
+          console.warn(`[quote] ${s}: ${err instanceof Error ? err.message : err}`);
+          return null;
+        }),
+      ),
     ),
-  );
+    fetchExtended(unique),
+  ]);
 
   for (let i = 0; i < unique.length; i++) {
     const q = results[i];
     if (q) out.set(unique[i], q);
   }
+
+  // Layer pre/post-market data onto the US quotes we successfully fetched.
+  for (const [secid, info] of extended) {
+    const q = out.get(secid);
+    if (!q) continue;
+    q.session = info.session;
+    if (info.session === "pre" || info.session === "post") {
+      q.extPrice = info.extPrice;
+      q.extChangeAbs = info.extChangeAbs;
+      q.extChangePct = info.extChangePct;
+      q.extTime = info.extTime;
+    }
+  }
+
   return out;
 }
 

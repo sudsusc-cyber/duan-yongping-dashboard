@@ -60,6 +60,67 @@ function useFlashDirection(value: number | undefined): "up" | "down" | null {
   return dir;
 }
 
+const SESSION_LABEL: Record<NonNullable<Quote["session"]>, string> = {
+  pre: "盘前",
+  regular: "盘中",
+  post: "盘后",
+  closed: "已收盘",
+};
+
+/** Compact US market-state pill shown in the table header. */
+function SessionPill({ session }: { session: NonNullable<Quote["session"]> }) {
+  const live = session === "pre" || session === "post";
+  const color = live ? "var(--rise)" : session === "regular" ? "var(--ink-2)" : "var(--ink-4)";
+  return (
+    <span
+      className="h-mono inline-flex items-center gap-1"
+      style={{
+        fontSize: 10,
+        letterSpacing: "0.04em",
+        color,
+        border: "1px solid var(--line-rule)",
+        borderRadius: 4,
+        padding: "1px 6px",
+      }}
+    >
+      {live && (
+        <span
+          style={{
+            width: 5,
+            height: 5,
+            borderRadius: "50%",
+            background: color,
+            display: "inline-block",
+          }}
+        />
+      )}
+      美股 · {SESSION_LABEL[session]}
+    </span>
+  );
+}
+
+/** Pre/post-market sub-line under the regular price. */
+function ExtLine({ q }: { q: Quote }) {
+  if ((q.session !== "pre" && q.session !== "post") || q.extPrice == null) return null;
+  const pct = q.extChangePct;
+  const color =
+    pct == null ? "var(--ink-4)" : pct >= 0 ? "var(--rise)" : "var(--fall)";
+  return (
+    <div
+      className="h-mono flex items-center justify-end gap-1 mt-0.5"
+      style={{ fontSize: 10, lineHeight: 1.2 }}
+    >
+      <span style={{ color: "var(--ink-3)", letterSpacing: "0.02em" }}>
+        {q.session === "pre" ? "盘前" : "盘后"}
+      </span>
+      <span style={{ color: "var(--ink-2)" }}>{q.extPrice.toFixed(2)}</span>
+      <span style={{ color }}>
+        {pct != null ? `${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%` : ""}
+      </span>
+    </div>
+  );
+}
+
 /** Flash-on-change number cell. Renders "—" when value is missing. */
 function FlashNum({
   value,
@@ -89,13 +150,20 @@ export default function HoldingsTable({
   const recordByKey = new Map(deltaRecords.map((r) => [dedupeKey(r), r]));
   const maxWeight = holdings.reduce((m, h) => Math.max(m, h.weight), 0);
 
+  // Surface the US trading session (pre/regular/post/closed) from any covered
+  // quote — they all share the same market state.
+  const usSession = holdings
+    .map((h) => quotes[marketSecidFor(h)]?.session)
+    .find((s): s is NonNullable<Quote["session"]> => Boolean(s));
+
   return (
     <section className="max-w-[1280px] mx-auto px-4 sm:px-8 mb-12 sm:mb-16">
       <div className="flex items-baseline gap-3 mb-3">
         <span style={{ fontSize: 13, color: "var(--ink-1)", fontWeight: 500 }}>
           持仓权重 / Allocation
         </span>
-        <span className="hidden sm:block ml-auto lbl-sm">实时价 · 腾讯财经 · 闪动 = 刚刚变化</span>
+        {usSession && <SessionPill session={usSession} />}
+        <span className="hidden sm:block ml-auto lbl-sm">实时价 · 腾讯财经 + 雅虎盘前盘后 · 闪动 = 刚刚变化</span>
       </div>
 
       <div className="overflow-x-auto -mx-4 px-4 sm:-mx-8 sm:px-8">
@@ -166,6 +234,7 @@ export default function HoldingsTable({
                 </td>
                 <td className="text-right num-cell">
                   <FlashNum value={q?.price} format={(n) => n.toFixed(2)} />
+                  {q && <ExtLine q={q} />}
                 </td>
                 <td className="text-right num-cell" style={{ color: upDownColor }}>
                   <FlashNum

@@ -36,6 +36,20 @@ export interface Quote {
   /** market cap in local currency, raw integer (no scaling) */
   marketCap?: number;
 
+  // ── US extended-hours (盘前/盘后) — present only for US equities, sourced
+  //    from Yahoo v8 chart (includePrePost). Absent for HK/CN and when the
+  //    enrichment fetch fails (the base regular quote is unaffected).
+  /** trading session at fetch time, US only */
+  session?: "pre" | "regular" | "post" | "closed";
+  /** latest pre/post-market price (only set when session is pre or post) */
+  extPrice?: number;
+  /** extended-hours change vs the most recent regular close (price units) */
+  extChangeAbs?: number;
+  /** extended-hours change vs the most recent regular close (percent) */
+  extChangePct?: number;
+  /** ISO time of the latest extended-hours print */
+  extTime?: string;
+
   /** Eastmoney's reported timestamp (unix seconds) */
   timestamp?: number;
   /** ISO string at the moment the server fetched it */
